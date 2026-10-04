@@ -28,6 +28,7 @@ h2{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:400;letter-s
 .card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit;transition:border-color .2s}
 .card:hover{border-color:var(--accent-dim)}
 .card b{display:block;font-weight:500;margin-bottom:2px}
+.card.diary{margin:-20px 0 8px;border-color:var(--border)}
 .card small{color:var(--dim);font-size:13px;line-height:1.45;display:block}
 .tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;padding:1px 6px;border-radius:4px;margin-top:8px;border:1px solid var(--border);color:var(--muted)}
 .tag.warn{color:var(--warn);border-color:currentColor}
@@ -49,9 +50,11 @@ footer a{color:var(--dim)}
 </header>
 
 <a class="play" href="game/">
-  <div><strong>Play the current build</strong><span>Day 0 and Day 1 are playable. Art isn't uploaded yet, so you'll see a starfield instead of backgrounds and portraits.</span></div>
+  <div><strong>Play the current build</strong><span>Day 0 and Day 1 are playable. The original art was lost, so for now you'll see a starfield instead of backgrounds and portraits.</span></div>
   <div class="go">Start ▸</div>
 </a>
+
+<a class="card diary" href="diary/"><b>Dev diary</b><small>Every version, rewrite and dead end so far, from the earliest surviving prototype to now, with screenshots of each stage.</small><span class="tag">timeline</span></a>
 
 <h2>Design reference</h2>
 <div class="grid">

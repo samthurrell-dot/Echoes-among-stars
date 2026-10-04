@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dev Diary · Echoes Among the Stars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b14;--panel:rgba(16,22,38,.92);--border:rgba(255,255,255,.1);--text:#e8edf5;--dim:#8a94a8;--muted:#5a6478;--accent:#5ee898;--accent-dim:#2bb673;--warn:#ffd36c;--line:rgba(94,232,152,.28)}
+:root[data-theme="light"]{--bg:#f3f5f9;--panel:#ffffff;--border:rgba(10,20,40,.12);--text:#141a26;--dim:#4c5566;--muted:#7a8394;--accent:#16865a;--accent-dim:#16865a;--warn:#8a5a00;--line:rgba(22,134,90,.3)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.65;font-size:16px}
+main{max-width:720px;margin:0 auto;padding:60px 16px 72px;position:relative}
+.top{display:flex;justify-content:space-between;align-items:center;position:absolute;top:16px;left:16px;right:16px}
+.top a,.theme{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;background:none;cursor:pointer}
+#diary h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:clamp(36px,9vw,56px);letter-spacing:.04em;line-height:1.1;margin:8px 0 14px}
+#diary h1::before{content:'Echoes Among the Stars';display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+#diary p{margin:0 0 14px}
+#diary a{color:var(--accent)}
+#diary hr{border:0;border-top:1px solid var(--border);margin:28px 0}
+#diary ul{margin:0 0 14px 20px}
+#diary li{margin-bottom:6px}
+#diary strong{font-weight:600}
+#diary em{color:var(--dim)}
+#diary code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:0 4px;word-break:break-word}
+#diary table{width:100%;border-collapse:collapse;margin:4px 0 18px;font-size:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+#diary th{text-align:left;font-weight:500;font-size:12px;color:var(--muted);padding:9px 12px;font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
+#diary td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:top}
+.numbers thead{display:none}
+.numbers tr:first-child td{border-top:0}
+.numbers td:first-child{color:var(--dim)}
+.numbers td:last-child{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-align:right}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:4px 0 18px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+.scroll table{margin:0!important;border:0!important;border-radius:0!important;min-width:760px}
+.scroll td{white-space:nowrap}
+.scroll td:nth-child(2){white-space:normal;min-width:190px}
+.scroll td.n{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;white-space:nowrap}
+.scroll th.n{text-align:right}
+/* timeline entries */
+.entry{position:relative;padding:0 0 8px 22px;border-left:1px solid var(--line);margin-left:6px}
+.entry::before{content:'';position:absolute;left:-6px;top:9px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+#diary h2{font-size:19px;font-weight:500;line-height:1.35;margin:0 0 12px;padding-top:2px}
+#diary h2 .when{display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.plain h2{font-family:'IBM Plex Mono',monospace;font-size:12px!important;font-weight:400!important;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+figure{margin:6px 0 18px}
+figure a{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#000}
+figure img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+figcaption{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.45}
+.status{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><a href="../">← Home</a><button class="theme" id="theme" aria-label="Switch light or dark">light / dark</button></div>
+<article id="diary"><p class="status">Loading the diary…</p></article>
+</main>
+<script src="vendor/marked.min.js"></script>
+<script>
+(function(){
+  var r=document.documentElement,k='echoes-theme';
+  try{var s=localStorage.getItem(k);if(s)r.dataset.theme=s;}catch(e){}
+  document.getElementById('theme').onclick=function(){var n=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}};
+
+  // Same heading ids as GitHub, so links like #4-october-2026--... work in both places
+  function parseCSV(t){var out=[],row=[],f='',q=false;for(var i=0;i<t.length;i++){var c=t[i];
+    if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c=='"')q=true;else if(c==','){row.push(f);f='';}else if(c=='\n'){row.push(f.replace(/\r$/,''));out.push(row);row=[];f='';}else f+=c;}
+    if(f||row.length){row.push(f);out.push(row);}return out;}
+  function slug(t){return t.trim().toLowerCase().replace(/[^\w\- ]+/g,'').replace(/ /g,'-');}
+
+  var el=document.getElementById('diary');
+  fetch('README.md',{cache:'no-cache'}).then(function(res){if(!res.ok)throw new Error(res.status);return res.text();}).then(function(md){
+    el.innerHTML=marked.parse(md);
+    // headings: ids, and split "date — title" into two lines
+    el.querySelectorAll('h2').forEach(function(h){
+      var text=h.textContent; h.id=slug(text);
+      var parts=text.split(' — ');
+      if(parts.length>1){h.innerHTML='<span class="when"></span>';h.firstChild.textContent=parts.shift();h.appendChild(document.createTextNode(parts.join(' — ')));}
+    });
+    // images: wrap each in a figure, using the italic line underneath as its caption
+    el.querySelectorAll('p > img').forEach(function(img){
+      var p=img.parentNode, fig=document.createElement('figure'), a=document.createElement('a');
+      a.href=img.getAttribute('src'); img.loading='lazy'; a.appendChild(img); fig.appendChild(a);
+      // caption = the italic line written straight after the image (same paragraph, or the next one)
+      var em=p.querySelector('em'), next=p.nextElementSibling, capText='';
+      if(em&&p.textContent.trim()===em.textContent.trim()){capText=em.textContent;}
+      else if(next&&next.tagName==='P'&&next.children.length===1&&next.firstElementChild.tagName==='EM'&&next.textContent.trim()===next.firstElementChild.textContent.trim()){capText=next.textContent;next.remove();}
+      if(capText){var cap=document.createElement('figcaption');cap.textContent=capText.trim();fig.appendChild(cap);}
+      p.replaceWith(fig);
+    });
+    // group everything after each h2 into a timeline entry (dated entries only)
+    var kids=Array.from(el.childNodes), cur=null;
+    kids.forEach(function(n){
+      if(n.nodeType===1&&n.tagName==='H2'){cur=document.createElement('section');cur.className=n.querySelector('.when')?'entry':'plain';el.insertBefore(cur,n);cur.appendChild(n);return;}
+      if(n.nodeType===1&&n.tagName==='HR'){cur=null;return;}
+      if(cur)cur.appendChild(n);
+    });
+    var nums=document.getElementById('by-the-numbers'); if(nums)nums.parentNode.classList.add('numbers');
+    var statsH=document.getElementById('session-stats');
+    if(statsH) fetch('stats/sessions.csv',{cache:'no-cache'}).then(function(r){return r.ok?r.text():'';}).then(function(t){
+      var rows=parseCSV(t); if(rows.length<2)return;
+      var hd=rows[0], idx=function(k){return hd.indexOf(k);}, fmt=function(v){return v===''?'—':(isNaN(+v)?v:(+v).toLocaleString('en-GB'));};
+      var cols=[['Date','date'],['What','summary'],['Model','models'],['Output tokens','output_tokens',1],['Lines changed',null,1],['Game words','ingame_words',1],['Tokens / line','tokens_per_line_changed',1]];
+      var tbl=document.createElement('table'), th='<thead><tr>'+cols.map(function(c){return '<th'+(c[2]?' class="n"':'')+'>'+c[0]+'</th>';}).join('')+'</tr></thead><tbody>';
+      rows.slice(1).forEach(function(r){ if(r.length<hd.length)return;
+        th+='<tr>'+cols.map(function(c){var v=c[1]?r[idx(c[1])]:String((+r[idx('lines_added')]||0)+(+r[idx('lines_removed')]||0));
+          if(c[1]==='models')v=v.replace(/ \(\d+\)/g,'');
+          var td=document.createElement('td'); td.textContent=c[2]?fmt(v):v; if(c[2])td.className='n'; return td.outerHTML;}).join('')+'</tr>';});
+      tbl.innerHTML=th+'</tbody>'; var w=document.createElement('div'); w.className='scroll'; w.appendChild(tbl);
+      var firstP=statsH.parentNode.querySelector('p'); statsH.parentNode.insertBefore(w, firstP?firstP.nextSibling:null);
+    });
+    if(location.hash){var t=document.getElementById(decodeURIComponent(location.hash.slice(1)));if(t)t.scrollIntoView();}
+  }).catch(function(){
+    el.innerHTML='<p class="status">The diary couldn\'t load here. <a href="https://github.com/samthurrell-dot/Echoes-among-stars/tree/main/diary">Read it on GitHub</a> instead.</p>';
+  });
+})();
+</script>
+</body>
+</html>
