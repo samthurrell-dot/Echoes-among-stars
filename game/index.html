@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Echoes Among the Stars</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+:root{--font-body:'IBM Plex Sans',system-ui,sans-serif;--font-display:'Cormorant Garamond',Georgia,serif;--font-mono:'IBM Plex Mono',monospace;--accent:#5ee898;--accent-dim:#2bb673;--bg-deep:#070b14;--bg-panel:rgba(10,14,24,0.88);--bg-card:rgba(16,22,38,0.92);--border:rgba(255,255,255,0.1);--border-hover:rgba(255,255,255,0.25);--text:#e8edf5;--text-dim:#8a94a8;--text-muted:#5a6478;--danger:#e24b4a;--warning:#ffd36c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg-deep);color:var(--text);overflow:hidden;height:100vh}
+#game-container{display:flex;flex-direction:column;height:100vh;position:relative}
+#game-screen{flex:1;position:relative;overflow:hidden;min-height:0}
+#background-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.8s;z-index:1}
+#background-image.loaded{opacity:0.9}
+#bg-fallback{position:absolute;inset:0;background:linear-gradient(160deg,#0a0f1e,#0d1a2e 40%,#0a1628);z-index:0}
+#bg-fallback::after{content:'';position:absolute;inset:0;background-image:radial-gradient(1px 1px at 10% 20%,rgba(255,255,255,0.4),transparent),radial-gradient(1.5px 1.5px at 50% 15%,rgba(255,255,255,0.5),transparent),radial-gradient(1px 1px at 70% 40%,rgba(255,255,255,0.25),transparent),radial-gradient(1px 1px at 85% 75%,rgba(255,255,255,0.35),transparent)}
+#game-screen::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(7,11,20,0.6));z-index:2;pointer-events:none}
+#character-portrait{position:absolute;right:4%;bottom:0;width:min(30vw,380px);height:min(65vh,550px);z-index:3;pointer-events:none}
+#character-portrait img{width:100%;height:100%;object-fit:contain;object-position:bottom right;filter:drop-shadow(0 12px 40px rgba(0,0,0,0.5))}
+#choice-container{position:absolute;right:4%;bottom:12px;width:min(42vw,500px);z-index:10;display:flex;flex-direction:column;gap:8px}
+.choice-button{background:rgba(7,11,20,0.85);backdrop-filter:blur(8px);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:10px;text-align:left;font-family:var(--font-body);font-size:15px;line-height:1.4;cursor:pointer;transition:all 0.2s;opacity:0;transform:translateX(20px);animation:choiceIn 0.35s ease forwards}
+.choice-button:nth-child(1){animation-delay:.05s}.choice-button:nth-child(2){animation-delay:.12s}.choice-button:nth-child(3){animation-delay:.19s}.choice-button:nth-child(4){animation-delay:.26s}
+@keyframes choiceIn{to{opacity:1;transform:translateX(0)}}
+.choice-button:hover{background:rgba(94,232,152,0.08);border-color:var(--accent-dim);transform:translateX(-4px)}
+.choice-button .leverage-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:6px;background:rgba(55,138,221,0.2);color:#85b7eb}
+#dialogue-box{position:relative;width:100%;min-height:180px;max-height:220px;padding:20px 28px;background:linear-gradient(180deg,rgba(10,14,24,0.6),rgba(10,14,24,0.95) 30%);border-top:1px solid var(--border);z-index:5;display:flex;flex-direction:column}
+#character-name{font-weight:600;font-size:15px;letter-spacing:.04em;margin-bottom:8px;min-height:20px;transition:color .3s}
+#dialogue-text{font-family:var(--font-body);font-weight:300;font-size:17px;line-height:1.65;flex:1}
+#dialogue-text em{font-family:var(--font-display);font-style:italic;font-size:19px;color:#b3c8e0}
+#dialogue-text.narration{font-family:var(--font-display);font-size:18px;color:#c5d0e0;font-style:italic}
+#continue-btn{position:absolute;bottom:16px;right:24px;background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-mono);font-size:12px;padding:6px 16px;border-radius:6px;cursor:pointer;transition:all .2s;letter-spacing:.06em}
+#continue-btn:hover{border-color:var(--accent-dim);color:var(--accent)}
+#continue-btn.hidden{opacity:0;pointer-events:none}
+#scene-label{position:absolute;top:16px;left:20px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;z-index:8;opacity:.7}
+#hud{position:fixed;top:12px;right:12px;background:var(--bg-card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:14px 16px;z-index:50;min-width:210px;font-size:13px}
+.hud-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.hud-label{font-size:11px;color:var(--text-muted);min-width:90px;letter-spacing:.04em}
+.hud-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.hud-bar-fill{height:100%;border-radius:99px;transition:width .6s}
+.hud-value{font-family:var(--font-mono);font-size:12px;min-width:26px;text-align:right;color:var(--text-dim);opacity:0;transition:opacity .2s}
+.hud-row:hover .hud-value{opacity:1}
+.hud-divider{height:1px;background:var(--border);margin:10px 0}
+.hud-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hud-btn{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:all .2s;letter-spacing:.03em}
+.hud-btn:hover{background:rgba(94,232,152,.06);border-color:var(--accent-dim);color:var(--accent)}
+.hud-btn.active-pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{border-color:var(--border)}50%{border-color:var(--accent-dim)}}
+#action-display{font-family:var(--font-mono);font-size:13px;text-align:center;padding:6px 0;color:var(--accent)}
+#action-display.depleted{color:var(--warning)}
+#action-display.hidden{display:none}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal-overlay.active{display:flex}
+.modal-panel{width:min(820px,94vw);max-height:88vh;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card);z-index:1}
+.modal-title{font-weight:600;font-size:16px}
+.modal-close{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-mono);font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer}
+.modal-close:hover{border-color:var(--danger);color:var(--danger)}
+.modal-body{padding:20px;overflow-y:auto;flex:1;line-height:1.6}
+.modal-body p{margin-bottom:12px}
+.email-sender{font-size:12px;color:var(--text-muted);margin-bottom:12px;font-family:var(--font-mono)}
+.map-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.loc-card{position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:130px;background:var(--bg-deep);cursor:pointer;transition:all .2s}
+.loc-card:hover{border-color:var(--accent-dim);transform:translateY(-2px)}
+.loc-card.visited{opacity:.55}
+.loc-card.locked{opacity:.35;cursor:not-allowed}
+.loc-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6}
+.loc-label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);font-size:13px}
+.loc-desc{position:absolute;left:8px;bottom:38px;font-size:11px;color:var(--text-dim);background:rgba(0,0,0,.5);padding:2px 8px;border-radius:4px;opacity:0;transition:opacity .2s}
+.loc-card:hover .loc-desc{opacity:1}
+.loc-badge{position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(94,232,152,.15);color:var(--accent);border:1px solid rgba(94,232,152,.3)}
+.evidence-section{margin-bottom:16px}.evidence-section-title{font-size:13px;font-weight:500;color:var(--text-dim);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.clue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.clue-card{border:1px dashed var(--border);padding:12px;border-radius:10px}.clue-name{font-weight:600;font-size:13px;margin-bottom:3px;color:var(--accent)}.clue-desc{font-size:12px;color:var(--text-dim);line-height:1.4}.clue-cat{font-size:10px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono)}
+.report-intro{font-size:14px;color:var(--text-dim);margin-bottom:16px;line-height:1.6}
+.report-clue{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.report-clue:hover{border-color:var(--text-dim)}
+.report-clue.selected{border-color:var(--accent-dim);background:rgba(94,232,152,.05)}
+.report-clue input{margin-top:3px;accent-color:var(--accent)}.report-clue-name{font-size:13px;font-weight:500}.report-clue-desc{font-size:12px;color:var(--text-dim)}
+.report-submit{background:rgba(94,232,152,.1);border:1px solid var(--accent-dim);color:var(--accent);font-family:var(--font-body);font-size:14px;padding:10px 24px;border-radius:8px;cursor:pointer;transition:all .2s;margin-top:12px}
+.report-submit:hover{background:rgba(94,232,152,.2)}
+.folio-entry{padding:12px 16px;margin-bottom:8px;background:rgba(255,255,255,.02);border-left:3px solid var(--accent-dim);border-radius:0 8px 8px 0;font-size:14px;line-height:1.5}
+.folio-entry .entry-day{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.folio-char{border-left-color:var(--warning)}.folio-char .char-name{font-weight:500;font-size:13px;margin-bottom:2px}.folio-char .char-read{font-size:13px;color:var(--text-dim);font-style:italic;line-height:1.5}
+#title-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#070b14,#0d1a2e 50%,#0a1628);z-index:200;transition:opacity .8s}
+#title-screen.hidden{opacity:0;pointer-events:none}
+#title-screen h1{font-family:var(--font-display);font-size:clamp(32px,6vw,56px);font-weight:400;letter-spacing:.08em;text-align:center;margin-bottom:8px}
+#title-screen .subtitle{font-family:var(--font-mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:48px}
+.title-btn{background:none;border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:16px;padding:14px 48px;border-radius:10px;cursor:pointer;margin-bottom:12px;min-width:240px;transition:all .3s}
+.title-btn:hover{background:rgba(94,232,152,.06);border-color:var(--accent-dim);color:var(--accent)}
+.title-btn.secondary{font-size:14px;padding:10px 48px;color:var(--text-dim)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--bg-card);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 20px;border-radius:10px;z-index:300;opacity:0;transition:all .35s;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div id="title-screen">
+  <h1>Echoes Among the Stars</h1>
+  <div class="subtitle">A Detective Visual Novel</div>
+  <button class="title-btn" id="btn-new-game">New Investigation</button>
+  <button class="title-btn secondary" id="btn-continue" style="display:none">Continue</button>
+</div>
+<div id="game-container" style="display:none">
+  <div id="game-screen"><div id="bg-fallback"></div><img id="background-image" src="" alt=""><span id="scene-label"></span><div id="character-portrait"></div><div id="choice-container"></div></div>
+  <div id="dialogue-box"><div id="character-name"></div><div id="dialogue-text"></div><button id="continue-btn">continue ▸</button></div>
+  <div id="hud">
+    <div class="hud-row"><span class="hud-label">Day</span><span class="hud-value" id="hud-day" style="min-width:auto;opacity:1">0</span></div>
+    <div id="action-display" class="hidden">Actions: <span id="action-count">3</span> / <span id="action-max">3</span></div>
+    <div class="hud-divider"></div>
+    <div class="hud-row"><span class="hud-label">Capt. Trust</span><div class="hud-bar"><div class="hud-bar-fill" id="bar-lawson" style="width:50%;background:linear-gradient(90deg,#ffd36c,#ffb84a)"></div></div><span class="hud-value" id="val-lawson">50</span></div>
+    <div class="hud-row"><span class="hud-label">Crew Rep.</span><div class="hud-bar"><div class="hud-bar-fill" id="bar-crew" style="width:50%;background:linear-gradient(90deg,#5ee898,#2bb673)"></div></div><span class="hud-value" id="val-crew">50</span></div>
+    <div class="hud-row"><span class="hud-label">Insight</span><div class="hud-bar"><div class="hud-bar-fill" id="bar-insight" style="width:70%;background:linear-gradient(90deg,#85b7eb,#5a8fd4)"></div></div><span class="hud-value" id="val-insight">70</span></div>
+    <div class="hud-divider"></div>
+    <div class="hud-toolbar">
+      <button class="hud-btn" id="btn-map">Map</button><button class="hud-btn" id="btn-journal">Journal</button>
+      <button class="hud-btn" id="btn-evidence">Evidence</button><button class="hud-btn" id="btn-folio">Folio</button>
+      <button class="hud-btn" id="btn-save">Save</button><button class="hud-btn" id="btn-load">Load</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-content"><div class="modal-panel"><div class="modal-header"><span class="modal-title" id="modal-content-title"></span><button class="modal-close" id="modal-content-close">close</button></div><div class="modal-body" id="modal-content-body"></div></div></div>
+<div class="modal-overlay" id="modal-journal"><div class="modal-panel"><div class="modal-header"><span class="modal-title">Detective's Journal</span><button class="modal-close" id="modal-journal-close">close</button></div><div class="modal-body" id="journal-body"></div></div></div>
+<div class="modal-overlay" id="modal-evidence"><div class="modal-panel"><div class="modal-header"><span class="modal-title">Evidence Board</span><button class="modal-close" id="modal-evidence-close">close</button></div><div class="modal-body" id="evidence-body"></div></div></div>
+<div class="modal-overlay" id="modal-map"><div class="modal-panel"><div class="modal-header"><span class="modal-title">Station Map</span><span id="map-actions" style="font-family:var(--font-mono);font-size:13px;color:var(--accent)"></span><button class="modal-close" id="modal-map-close">close</button></div><div class="modal-body"><div class="map-grid" id="map-grid"></div></div></div></div>
+<div class="modal-overlay" id="modal-report"><div class="modal-panel"><div class="modal-header"><span class="modal-title">Daily Report to Captain Lawson</span><button class="modal-close" id="modal-report-close">close</button></div><div class="modal-body" id="report-body"></div></div></div>
+<div class="modal-overlay" id="modal-folio"><div class="modal-panel"><div class="modal-header"><span class="modal-title">Smart-Folio</span><button class="modal-close" id="modal-folio-close">close</button></div><div class="modal-body" id="folio-body"></div></div></div>
+<div id="toast"></div>
+<script src="game_data.js"></script>
+<script>
+const SAVE_KEY='echoes-among-the-stars-save';
+let state={},currentNodes=[],nodeIndex=0,inlineQueue=[],pendingGoto=null;
+let isTyping=false,typewriterTimeout=null,fullTextCache='',typeCallback=null;
+let awaitingChoice=false,awaitingModalClose=false,pendingModalCallback=null;
+
+function initState(){state=JSON.parse(JSON.stringify(GAME_DATA.config.initialState));state.currentScene=GAME_DATA.config.startScene;state.visitedToday=[];state.reportedClues=[];state.dayClues=[];state.inScene=false;}
+function getCrewAvgTrust(){const t=state.trust,keys=Object.keys(t).filter(k=>k!=='lawson');return Math.round(keys.reduce((s,k)=>s+t[k],0)/keys.length);}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function applyEffects(fx){if(!fx)return;if(fx.trust)for(const[c,d]of Object.entries(fx.trust)){if(state.trust[c]!==undefined)state.trust[c]=clamp(state.trust[c]+d,0,100);}if(fx.suspicion)for(const[c,d]of Object.entries(fx.suspicion)){if(state.suspicion[c]!==undefined)state.suspicion[c]=clamp(state.suspicion[c]+d,0,100);}if(fx.shawGuilt!==undefined)state.shawGuilt=clamp(state.shawGuilt+fx.shawGuilt,0,100);if(fx.energy!==undefined)state.energy=clamp(state.energy+fx.energy,0,100);if(fx.insight!==undefined)state.insight=clamp(state.insight+fx.insight,0,100);if(fx.authority!==undefined)state.authority=clamp(state.authority+fx.authority,0,100);renderHUD();}
+function setFlag(k,v){if(typeof k==='object'){for(const[a,b]of Object.entries(k))state.flags[a]=b;}else state.flags[k]=v;}
+function checkFlag(f){return!!state.flags[f];}
+function hasClue(id){return state.clues.includes(id);}
+function addJournal(entry){if(entry&&!state.journal.some(j=>j.text===entry)){state.journal.push({text:entry,day:state.day});showToast('Journal updated');}}
+function addClue(id){if(id&&!state.clues.includes(id)){state.clues.push(id);if(!state.dayClues.includes(id))state.dayClues.push(id);const c=GAME_DATA.clues[id];if(c)showToast('Clue: '+c.name);}}
+
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({state,version:2}));showToast('Game saved');}catch(e){showToast('Save failed');}}
+function loadGame(){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw){showToast('No save found');return false;}state=JSON.parse(raw).state;renderHUD();if(state.mode==='investigation'&&!state.inScene)showInvestigationHub();else loadScene(state.currentScene);showToast('Game loaded');return true;}catch(e){showToast('Load failed');return false;}}
+function hasSave(){return!!localStorage.getItem(SAVE_KEY);}
+
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+function renderHUD(){$('#hud-day').textContent=state.day;const lt=state.trust.lawson||50;$('#bar-lawson').style.width=lt+'%';$('#val-lawson').textContent=lt;const cr=getCrewAvgTrust();$('#bar-crew').style.width=cr+'%';$('#val-crew').textContent=cr;const ins=state.insight||70;$('#bar-insight').style.width=ins+'%';$('#val-insight').textContent=ins;const ad=$('#action-display');if(state.mode==='investigation'){ad.classList.remove('hidden');ad.classList.toggle('depleted',state.actionsRemaining<=0);$('#action-count').textContent=state.actionsRemaining;$('#action-max').textContent=GAME_DATA.config.actionsPerDay;}else ad.classList.add('hidden');$('#btn-map').classList.toggle('active-pulse',state.mode==='investigation'&&state.actionsRemaining>0&&!state.inScene);}
+function setBackground(key){const bgEl=$('#background-image'),path=GAME_DATA.backgrounds[key];if(!path){bgEl.classList.remove('loaded');return;}bgEl.src=GAME_DATA.config.imagePath+'Scenes/'+path;bgEl.onload=()=>bgEl.classList.add('loaded');bgEl.onerror=()=>bgEl.classList.remove('loaded');}
+function setPortrait(cid,variant){const c=$('#character-portrait');if(!cid||variant==='none'){c.innerHTML='';return;}const ch=GAME_DATA.characters[cid];if(!ch||!ch.portraits){c.innerHTML='';return;}const f=ch.portraits[variant||'default']||ch.portraits.default;if(!f){c.innerHTML='';return;}c.innerHTML='<img src="'+GAME_DATA.config.imagePath+'Characters/'+f+'" alt="'+ch.name+'" onerror="this.style.display=\'none\'">';}
+function setCharacterName(cid){const el=$('#character-name');if(!cid||cid==='narrator'){el.textContent='';el.style.color='transparent';return;}const ch=GAME_DATA.characters[cid];if(!ch){el.textContent='';return;}el.textContent=ch.name;el.style.color=ch.color||'var(--accent)';}
+function typeText(text,element,callback){if(typewriterTimeout)clearTimeout(typewriterTimeout);isTyping=true;fullTextCache=text;typeCallback=callback||null;element.innerHTML='';const chars=[];let inTag=false,tagBuf='';for(const ch of text){if(ch==='<'){inTag=true;tagBuf='<';continue;}if(inTag){tagBuf+=ch;if(ch==='>'){inTag=false;chars.push({t:'tag',v:tagBuf});tagBuf='';}continue;}chars.push({t:'c',v:ch});}let i=0,html='';function next(){if(i>=chars.length){isTyping=false;typeCallback=null;if(callback)callback();return;}const c=chars[i++];if(c.t==='tag'){html+=c.v;element.innerHTML=html;next();}else{html+=c.v;element.innerHTML=html;const d='.!?'.includes(c.v)?80:',;:'.includes(c.v)?40:c.v===' '?15:22;typewriterTimeout=setTimeout(next,d);}}next();}
+
+function evalCondition(cond){if(!cond)return true;if(cond.hasClue&&!hasClue(cond.hasClue))return false;if(cond.hasFlag&&!checkFlag(cond.hasFlag))return false;if(cond.noFlag&&checkFlag(cond.noFlag))return false;if(cond.trustMin){for(const[c,v]of Object.entries(cond.trustMin)){if((state.trust[c]||0)<v)return false;}}if(cond.trustMax){for(const[c,v]of Object.entries(cond.trustMax)){if((state.trust[c]||0)>v)return false;}}if(cond.insightMin&&state.insight<cond.insightMin)return false;if(cond.shawGuiltMax&&state.shawGuilt>cond.shawGuiltMax)return false;if(cond.dayMin&&state.day<cond.dayMin)return false;return true;}
+
+function showChoices(options){awaitingChoice=true;const c=$('#choice-container');c.innerHTML='';$('#continue-btn').classList.add('hidden');options.forEach(opt=>{if(opt.condition&&!evalCondition(opt.condition))return;const btn=document.createElement('button');btn.className='choice-button';let label=opt.text;if(opt.leverageTag)label+='<span class="leverage-tag">'+opt.leverageTag+'</span>';btn.innerHTML=label;btn.onclick=()=>handleChoice(opt);c.appendChild(btn);});}
+function clearChoices(){awaitingChoice=false;$('#choice-container').innerHTML='';}
+function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+function openModal(id){$('#'+id).classList.add('active');}
+function closeModal(id){$('#'+id).classList.remove('active');}
+function showContentModal(title,content,sender){$('#modal-content-title').textContent=title;$('#modal-content-body').innerHTML=(sender?'<div class="email-sender">From: '+sender+'</div>':'')+content;openModal('modal-content');awaitingModalClose=true;}
+
+function renderJournal(){const body=$('#journal-body');if(state.journal.length===0){body.innerHTML='<div style="color:var(--text-muted);font-style:italic;text-align:center;padding:20px">Your journal is empty.</div>';return;}body.innerHTML=state.journal.slice().reverse().map(e=>'<div class="folio-entry"><div class="entry-day">Day '+e.day+'</div>'+e.text+'</div>').join('');}
+function renderEvidence(){const body=$('#evidence-body');if(state.clues.length===0){body.innerHTML='<p style="color:var(--text-muted);font-style:italic">No evidence collected yet.</p>';return;}const cats={};state.clues.forEach(id=>{const c=GAME_DATA.clues[id];if(!c)return;const cat=c.category||'Other';if(!cats[cat])cats[cat]=[];cats[cat].push(c);});let html='';for(const[cat,items]of Object.entries(cats)){html+='<div class="evidence-section"><div class="evidence-section-title">'+cat+'</div><div class="clue-grid">';items.forEach(c=>{html+='<div class="clue-card"><div class="clue-name">'+c.name+'</div><div class="clue-desc">'+c.desc+'</div><div class="clue-cat">'+c.category+'</div></div>';});html+='</div></div>';}body.innerHTML=html;}
+
+function renderMap(){const grid=$('#map-grid');grid.innerHTML='';$('#map-actions').textContent='Actions: '+state.actionsRemaining;(GAME_DATA.locations||[]).forEach(loc=>{const visited=state.visitedToday.includes(loc.id);const bgPath=GAME_DATA.backgrounds[loc.bg];const imgSrc=bgPath?GAME_DATA.config.imagePath+'Scenes/'+bgPath:'';const hasEvt=getLocationEvents(loc.id).length>0;const div=document.createElement('div');div.className='loc-card'+(visited?' visited':'')+(state.actionsRemaining<=0&&!visited?' locked':'');div.innerHTML=(imgSrc?'<img src="'+imgSrc+'" alt="" onerror="this.style.display=\'none\'">':'')+'<div class="loc-desc">'+(loc.description||'')+'</div><div class="loc-label">'+loc.name+'</div>'+(hasEvt&&!visited?'<div class="loc-badge">New</div>':'');div.onclick=()=>visitLocation(loc.id);grid.appendChild(div);});}
+function getLocationEvents(locId){const events=(GAME_DATA.locationEvents||{})[locId]||[];return events.filter(evt=>{if(evt.day!==undefined&&evt.day!==state.day)return false;if(evt.dayMin!==undefined&&state.day<evt.dayMin)return false;if(evt.dayMax!==undefined&&state.day>evt.dayMax)return false;if(evt.requires){if(evt.requires.flag&&!checkFlag(evt.requires.flag))return false;if(evt.requires.noFlag&&checkFlag(evt.requires.noFlag))return false;if(evt.requires.clue&&!hasClue(evt.requires.clue))return false;if(evt.requires.trustMin){for(const[c,v]of Object.entries(evt.requires.trustMin)){if((state.trust[c]||0)<v)return false;}}if(evt.requires.shawGuiltMax&&state.shawGuilt>evt.requires.shawGuiltMax)return false;}if(evt.once&&checkFlag('evt_'+evt.id))return false;return true;});}
+
+function visitLocation(locId){if(state.actionsRemaining<=0){showToast('No actions remaining.');return;}closeModal('modal-map');state.actionsRemaining--;state.visitedToday.push(locId);renderHUD();const events=getLocationEvents(locId);if(events.length>0){const evt=events[0];if(evt.once)setFlag('evt_'+evt.id,true);state.inScene=true;loadScene(evt.scene);}else{const loc=GAME_DATA.locations.find(l=>l.id===locId);setBackground(loc?loc.bg:'');setCharacterName('amelia');setPortrait('amelia','default');const el=$('#dialogue-text');el.className='';typeText('<em>Nothing new here right now. I should try somewhere else.</em>',el,()=>{$('#continue-btn').classList.remove('hidden');});$('#continue-btn').classList.add('hidden');$('#scene-label').textContent=loc?loc.name:'';state.inScene=true;currentNodes=[];nodeIndex=0;inlineQueue=[];pendingGoto=null;}}
+
+function showInvestigationHub(){state.inScene=false;clearChoices();if(state.actionsRemaining<=0){triggerDailyReport();return;}const loc=GAME_DATA.locations.find(l=>l.id==='quarters');setBackground(loc?loc.bg:'quarters');setPortrait('amelia','default');setCharacterName('amelia');const el=$('#dialogue-text');el.className='';const w=state.actionsRemaining===1?'one more lead':state.actionsRemaining+' leads';typeText('<em>Day '+state.day+'. I have time to follow '+w+' before filing my report. Where should I look?</em>',el,()=>{$('#continue-btn').classList.add('hidden');showChoices([{text:'Open the station map',goto_fn:()=>{clearChoices();renderMap();openModal('modal-map');}},{text:'Review my evidence board',goto_fn:()=>{clearChoices();renderEvidence();openModal('modal-evidence');}},{text:'File my daily report now',goto_fn:()=>{clearChoices();triggerDailyReport();}}]);});$('#continue-btn').classList.add('hidden');$('#scene-label').textContent='Day '+state.day+' — Investigation';}
+
+function triggerDailyReport(){state.inScene=true;const body=$('#report-body');const unreported=state.clues.filter(id=>!state.reportedClues.includes(id)&&GAME_DATA.clues[id]);let html='<div class="report-intro"><p>Evening, Day '+state.day+'. Captain Lawson expects your report.</p><p style="font-size:13px;color:var(--text-muted)">Sharing builds trust but lets suspects learn what you know. Withholding protects your investigation.</p></div>';if(unreported.length===0){html+='<p style="color:var(--text-dim);font-style:italic">No new findings to report.</p>';}else{unreported.forEach(id=>{const c=GAME_DATA.clues[id];html+='<label class="report-clue" onclick="this.classList.toggle(\'selected\')"><input type="checkbox" value="'+id+'"><div><div class="report-clue-name">'+c.name+'</div><div class="report-clue-desc">'+c.desc+'</div></div></label>';});}html+='<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><button class="report-submit" onclick="submitDailyReport()">Submit Report</button></div>';body.innerHTML=html;openModal('modal-report');}
+
+function submitDailyReport(){const checked=[...$$('#report-body input:checked')].map(i=>i.value);const total=state.clues.filter(id=>!state.reportedClues.includes(id)&&GAME_DATA.clues[id]).length;let ld=0;if(checked.length===0){ld=-5;addJournal('Filed a minimal report. Lawson seemed displeased.');}else if(checked.length>=total&&total>0){ld=Math.min(12,4+checked.length*2);addJournal('Filed a full report — shared '+checked.length+' finding'+(checked.length>1?'s':'')+' with the Captain.');}else{ld=Math.min(8,2+checked.length*2);addJournal('Filed a selective report — shared '+checked.length+' of '+total+' findings.');}state.trust.lawson=clamp(state.trust.lawson+ld,0,100);checked.forEach(id=>{if(!state.reportedClues.includes(id))state.reportedClues.push(id);setFlag('reported_'+id,true);});closeModal('modal-report');renderHUD();transitionToNextDay();}
+
+function transitionToNextDay(){state.day++;state.actionsRemaining=GAME_DATA.config.actionsPerDay;state.visitedToday=[];state.dayClues=[];renderHUD();const bid='day'+state.day+'_briefing';if(GAME_DATA.scenes[bid]){state.inScene=true;loadScene(bid);}else if(state.day<=5){showInvestigationHub();}else{if(GAME_DATA.scenes.ending_decision)loadScene('ending_decision');else{setCharacterName('narrator');$('#dialogue-text').className='narration';$('#dialogue-text').textContent='End of demo — Days 2-5 content coming soon.';}}}
+
+function renderFolio(){const body=$('#folio-body');let html='';const assessments=GAME_DATA.trustAssessments||{};['lawson','shaw','emily','liu','max','clara','vega'].forEach(cid=>{const ch=GAME_DATA.characters[cid];if(!ch)return;const trust=state.trust[cid]||50;const bands=assessments[cid]||[];let reading='No strong impression yet.';for(const band of bands){if(trust>=band.min&&trust<=band.max){reading=band.text;break;}}html+='<div class="folio-entry folio-char"><div class="char-name" style="color:'+ch.color+'">'+ch.name+'</div><div class="char-read">'+reading+'</div></div>';});if(state.dayClues.length>0){html+='<div class="evidence-section" style="margin-top:16px"><div class="evidence-section-title">Today\'s findings</div>';state.dayClues.forEach(id=>{const c=GAME_DATA.clues[id];if(c)html+='<div class="folio-entry"><strong>'+c.name+':</strong> '+c.desc+'</div>';});html+='</div>';}body.innerHTML=html||'<div style="color:var(--text-muted);text-align:center;padding:20px">No notes yet.</div>';}
+
+function loadScene(sceneId){const scene=GAME_DATA.scenes[sceneId];if(!scene){console.error('Scene not found:',sceneId);showToast('Error: scene missing');return;}state.currentScene=sceneId;state.inScene=true;currentNodes=scene.nodes;nodeIndex=0;inlineQueue=[];pendingGoto=null;awaitingChoice=false;clearChoices();$('#scene-label').textContent=scene.label||'';processNextNode();}
+
+function processNextNode(){if(inlineQueue.length>0){processNode(inlineQueue.shift());return;}if(pendingGoto){const t=pendingGoto;pendingGoto=null;loadScene(t);return;}if(nodeIndex>=currentNodes.length){if(state.mode==='investigation'){state.inScene=false;if(state.actionsRemaining<=0)triggerDailyReport();else showInvestigationHub();}else{$('#continue-btn').classList.add('hidden');}return;}processNode(currentNodes[nodeIndex++]);}
+
+function processNode(node){switch(node.type){
+case 'bg':setBackground(node.key);processNextNode();break;
+case 'portrait':setPortrait(node.character,node.variant);processNextNode();break;
+case 'dialogue':{setCharacterName(node.character);if(node.character&&node.character!=='narrator')setPortrait(node.character,node.portrait||'default');const el=$('#dialogue-text');el.className='';typeText(node.text,el,()=>$('#continue-btn').classList.remove('hidden'));$('#continue-btn').classList.add('hidden');break;}
+case 'narration':{setCharacterName('narrator');const el=$('#dialogue-text');el.className='narration';typeText(node.text,el,()=>$('#continue-btn').classList.remove('hidden'));$('#continue-btn').classList.add('hidden');break;}
+case 'thought':{setCharacterName('amelia');setPortrait('amelia',node.portrait||'default');const el=$('#dialogue-text');el.className='';typeText('<em>'+node.text+'</em>',el,()=>$('#continue-btn').classList.remove('hidden'));$('#continue-btn').classList.add('hidden');break;}
+case 'choice':showChoices(node.options);break;
+case 'goto':loadScene(node.scene);break;
+case 'modal':showContentModal(node.title,node.content,node.sender);if(node.journal)addJournal(node.journal);break;
+case 'flag':setFlag(node.key,node.value!==undefined?node.value:true);processNextNode();break;
+case 'check':if(node.condition?evalCondition(node.condition):checkFlag(node.flag))loadScene(node.ifTrue);else loadScene(node.ifFalse);break;
+case 'effect':applyEffects(node.effects);processNextNode();break;
+case 'journal':addJournal(node.entry);processNextNode();break;
+case 'clue':addClue(node.id);processNextNode();break;
+case 'start_investigation':state.mode='investigation';if(state.day<1)state.day=1;state.actionsRemaining=GAME_DATA.config.actionsPerDay;state.visitedToday=[];state.dayClues=[];renderHUD();processNextNode();break;
+case 'open_map':renderMap();openModal('modal-map');break;
+case 'end_day':triggerDailyReport();break;
+default:console.warn('Unknown node:',node.type);processNextNode();}}
+
+function handleChoice(option){clearChoices();if(option.goto_fn){option.goto_fn();return;}if(option.effects)applyEffects(option.effects);if(option.flag)setFlag(option.flag);if(option.journal)addJournal(option.journal);if(option.clue)addClue(option.clue);if(option.modal){showContentModal(option.modal.title,option.modal.content,option.modal.sender);pendingModalCallback=()=>{if(option.dialogue&&option.dialogue.length){inlineQueue=[...option.dialogue];pendingGoto=option.goto||null;processNextNode();}else if(option.goto)loadScene(option.goto);else processNextNode();};return;}if(option.dialogue&&option.dialogue.length){inlineQueue=[...option.dialogue];pendingGoto=option.goto||null;processNextNode();}else if(option.goto)loadScene(option.goto);else processNextNode();}
+
+function onContinue(){if(awaitingChoice)return;if(awaitingModalClose)return;if(isTyping){clearTimeout(typewriterTimeout);isTyping=false;$('#dialogue-text').innerHTML=fullTextCache;const cb=typeCallback;typeCallback=null;if(cb)cb();else $('#continue-btn').classList.remove('hidden');return;}processNextNode();}
+
+$('#continue-btn').addEventListener('click',e=>{e.stopPropagation();onContinue();});
+$('#dialogue-box').addEventListener('click',onContinue);
+document.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){if(!$('#title-screen').classList.contains('hidden'))return;if($$('.modal-overlay.active').length>0)return;e.preventDefault();onContinue();}});
+
+function setupModalClose(mid,cid){$(cid).addEventListener('click',()=>{closeModal(mid);if(mid==='modal-content'){awaitingModalClose=false;if(pendingModalCallback){const cb=pendingModalCallback;pendingModalCallback=null;cb();}}if(mid==='modal-map'&&state.mode==='investigation'&&!state.inScene)showInvestigationHub();});$('#'+mid).addEventListener('click',e=>{if(e.target.id===mid){closeModal(mid);if(mid==='modal-content'){awaitingModalClose=false;if(pendingModalCallback){const cb=pendingModalCallback;pendingModalCallback=null;cb();}}if(mid==='modal-map'&&state.mode==='investigation'&&!state.inScene)showInvestigationHub();}});}
+setupModalClose('modal-content','#modal-content-close');
+setupModalClose('modal-journal','#modal-journal-close');
+setupModalClose('modal-evidence','#modal-evidence-close');
+setupModalClose('modal-map','#modal-map-close');
+setupModalClose('modal-report','#modal-report-close');
+setupModalClose('modal-folio','#modal-folio-close');
+
+$('#btn-map').addEventListener('click',()=>{if(state.mode!=='investigation'){showToast('Map available during investigation');return;}renderMap();openModal('modal-map');});
+$('#btn-journal').addEventListener('click',()=>{renderJournal();openModal('modal-journal');});
+$('#btn-evidence').addEventListener('click',()=>{renderEvidence();openModal('modal-evidence');});
+$('#btn-folio').addEventListener('click',()=>{renderFolio();openModal('modal-folio');});
+$('#btn-save').addEventListener('click',saveGame);
+$('#btn-load').addEventListener('click',loadGame);
+
+function startNewGame(){initState();$('#title-screen').classList.add('hidden');$('#game-container').style.display='flex';renderHUD();setTimeout(()=>loadScene(GAME_DATA.config.startScene),400);}
+function continueGame(){if(loadGame()){$('#title-screen').classList.add('hidden');$('#game-container').style.display='flex';renderHUD();}}
+$('#btn-new-game').addEventListener('click',startNewGame);
+$('#btn-continue').addEventListener('click',continueGame);
+if(hasSave())$('#btn-continue').style.display='block';
+</script>
+</body>
+</html>

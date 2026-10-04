@@ -1,0 +1,168 @@
+<style>
+.layer{position:relative;padding:6px 0 4px;margin-bottom:2px;border-radius:var(--border-radius-md)}
+.layer-label{font-size:11px;font-weight:500;padding:2px 8px;margin-bottom:4px;display:inline-block;border-radius:4px}
+.nodes{display:flex;flex-wrap:wrap;gap:5px;padding:0 6px;min-height:34px}
+.n{font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;user-select:none;line-height:1.3;white-space:nowrap}
+.n:hover{transform:translateY(-1px)}
+.n.sel{border-color:var(--color-text-primary);transform:scale(1.05)}
+.n.dim{opacity:0.3}
+.n.hi{opacity:1;border-color:var(--color-text-primary)}
+.l1{background:#E1F5EE}.l1 .n{background:#9FE1CB;color:#085041}
+.l2{background:#FAEEDA}.l2 .n{background:#FAC775;color:#633806}
+.l3{background:#FCEBEB}.l3 .n{background:#F7C1C1;color:#791F1F}
+.l4{background:#EEEDFE}.l4 .n{background:#CECBF6;color:#3C3489}
+.ll1{background:#085041;color:#E1F5EE}.ll2{background:#854F0B;color:#FAEEDA}
+.ll3{background:#A32D2D;color:#FCEBEB}.ll4{background:#534AB7;color:#EEEDFE}
+.detail{margin-top:8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 16px;min-height:80px}
+.detail-title{font-weight:500;font-size:15px;margin-bottom:6px}
+.detail-row{font-size:13px;color:var(--color-text-secondary);margin-bottom:3px;line-height:1.5}
+.detail-row b{color:var(--color-text-primary);font-weight:500}
+.legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;font-size:12px;color:var(--color-text-secondary);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.arrow-hint{font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px}
+.req{display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px;background:var(--color-background-warning);color:var(--color-text-warning)}
+svg.arrows{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+</style>
+<div class="legend">
+<span><span class="dot" style="background:#9FE1CB"></span> Layer 1: surface</span>
+<span><span class="dot" style="background:#FAC775"></span> Layer 2: doubt</span>
+<span><span class="dot" style="background:#F7C1C1"></span> Layer 3: conspiracy</span>
+<span><span class="dot" style="background:#CECBF6"></span> Layer 4: redemption</span>
+<span style="margin-left:auto;font-size:11px">Click any clue to see details</span>
+</div>
+<div id="graph" style="position:relative">
+<div class="layer l1">
+<span class="layer-label ll1">Layer 1: surface — Shaw did it</span>
+<div class="nodes" id="row1"></div>
+</div>
+<div class="layer l2">
+<span class="layer-label ll2">Layer 2: doubt — something's off</span>
+<div class="nodes" id="row2"></div>
+</div>
+<div class="layer l3">
+<span class="layer-label ll3">Layer 3: conspiracy — Lawson exposed</span>
+<div class="nodes" id="row3"></div>
+</div>
+<div class="layer l4">
+<span class="layer-label ll4">Layer 4: redemption — Izzy lives</span>
+<div class="nodes" id="row4"></div>
+</div>
+<svg class="arrows" id="arrowSvg"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"/></marker></defs></svg>
+</div>
+<div class="detail" id="detail">
+<div style="color:var(--color-text-tertiary);font-size:14px;text-align:center;padding:12px 0">Select a clue above to see its details, prerequisites, and what it unlocks</div>
+</div>
+<script>
+const CLUES={
+S1:{id:"S1",layer:1,name:"Rivalry",full:"Shaw-Rourke Rivalry",desc:"Multiple crew confirm a deep, long-standing personal grudge.",loc:"Dining Hall",src:"Max, Liu, Clara",trust:"30+",day:"1",pre:[],cat:"Testimony"},
+S2:{id:"S2",layer:1,name:"Badge log",full:"Shaw's Badge Log",desc:"Shaw's badge pinged near the lab at 03:12 on murder night.",loc:"Command Center",src:"Self / Emily",trust:"—/50+",day:"1",pre:[],cat:"Digital"},
+S3:{id:"S3",layer:1,name:"First on scene",full:"First on Scene",desc:"Shaw found the body during a late patrol and called it in.",loc:"Day 0 (auto)",src:"Shaw",trust:"—",day:"0",pre:[],cat:"Testimony"},
+S4:{id:"S4",layer:1,name:"Lab struggle",full:"Lab Struggle Evidence",desc:"Overturned equipment, scattered samples, clear signs of a fight.",loc:"Research Lab",src:"Self",trust:"—",day:"1",pre:[],cat:"Physical"},
+S5:{id:"S5",layer:1,name:"Combat training",full:"Combat Training Record",desc:"8 years Colonial Marines, Gunnery Sgt, close-combat specialist.",loc:"Command Center",src:"Lawson / Self",trust:"40+",day:"1",pre:[],cat:"Personnel"},
+S6:{id:"S6",layer:1,name:"Volatility",full:"Shaw's Volatility",desc:"Shaw visibly agitated and aggressive in recent weeks.",loc:"Various",src:"Clara, Vega",trust:"40+",day:"2",pre:["S1"],cat:"Behaviour"},
+S7:{id:"S7",layer:1,name:"Autopsy",full:"Autopsy: Blunt Trauma",desc:"Cause of death: blunt force trauma from a trained fighter.",loc:"Medical Bay",src:"Liu",trust:"50+",day:"1",pre:[],cat:"Medical"},
+D1:{id:"D1",layer:2,name:"Why now?",full:"Why Now?",desc:"Shaw endured 3 years. What pushed him over the edge just now?",loc:"Amelia's thought",src:"Auto-deduction",trust:"—",day:"2",pre:["S1","S2"],cat:"Deduction"},
+D2:{id:"D2",layer:2,name:"Comms restricted",full:"Comms Restricted",desc:"External comms were locked to command-only before the body was found.",loc:"Comms Room",src:"Emily",trust:"50+",day:"2",pre:[],cat:"Digital"},
+D3:{id:"D3",layer:2,name:"ROSIE timestamps",full:"ROSIE's Movement Logs",desc:"Lawson accessed comms room and lab corridor at unusual hours the night before.",loc:"Command Center",src:"Max",trust:"50+",day:"2",pre:["D2"],cat:"Digital"},
+D4:{id:"D4",layer:2,name:"Dup. manifest",full:"Duplicate Manifest Entry",desc:"Same crate logged twice, 3 minutes apart. Someone was moving something.",loc:"Command Center",src:"Self",trust:"—",day:"1",pre:[],cat:"Digital"},
+D5:{id:"D5",layer:2,name:"Whisper",full:"Overheard Whisper",desc:"'If they check the logs, we're burned.' Speakers unseen.",loc:"Corridors",src:"Unknown",trust:"—",day:"2–3",pre:[],cat:"Testimony"},
+D6:{id:"D6",layer:2,name:"Pre-murder change",full:"Pre-Murder Behaviour Change",desc:"Clara noticed Shaw's agitation started days BEFORE the murder.",loc:"Dining / Observation",src:"Clara",trust:"55+",day:"3",pre:["S6"],cat:"Testimony"},
+D7:{id:"D7",layer:2,name:"Too prepared",full:"Lawson's Rapid Response",desc:"Lawson had lockdown protocol ready within minutes. 'Too prepared.'",loc:"Command Center",src:"Vega / Emily",trust:"50+/60+",day:"3",pre:["D2"],cat:"Deduction"},
+C1:{id:"C1",layer:3,name:"Forged comm",full:"Forged Comm Log",desc:"The 'affair' evidence — timestamps don't match station's master clock. Fabricated.",loc:"Comms Room",src:"Emily",trust:"65+",day:"3",pre:["D2","D3"],cat:"Digital",req:true},
+C2:{id:"C2",layer:3,name:"Override log",full:"Captain's Override Log",desc:"Lawson used her override on the comms array at 02:47, before the murder report.",loc:"Command Center",src:"Max / ROSIE",trust:"60+",day:"3",pre:["D3"],cat:"Digital"},
+C3:{id:"C3",layer:3,name:"Private logs",full:"Lawson's Private Logs",desc:"Journal entries reveal her desperation — knew Rourke was trying to replace her.",loc:"Lawson's Quarters",src:"Shaw (access)",trust:"Shaw 60+, guilt ≤40",day:"4",pre:["C1"],cat:"Digital"},
+C4:{id:"C4",layer:3,name:"Corporate pact",full:"Corporate Pact Reference",desc:"Rourke family 'arrangement' — keep Marcus productive or be replaced.",loc:"Comms / Lawson's Quarters",src:"Emily / Self",trust:"70+",day:"4",pre:["C3"],cat:"Digital"},
+C5:{id:"C5",layer:3,name:"Shaw confesses",full:"Shaw's Coerced Testimony",desc:"Shaw reveals Lawson showed him 'proof' of an affair — the lie that made him snap.",loc:"Quarters / Observation",src:"Shaw",trust:"60+, guilt ≤40",day:"3–4",pre:["S1"],cat:"Testimony"},
+C6:{id:"C6",layer:3,name:"Affair debunked",full:"Affair Evidence Debunked",desc:"Emily proves the affair messages were fabricated on Lawson's terminal.",loc:"Comms Room",src:"Emily",trust:"70+",day:"4",pre:["C1","C5"],cat:"Digital"},
+R1:{id:"R1",layer:4,name:"Encrypted signal",full:"Encrypted Signal",desc:"A repeating signal on a decommissioned frequency. Someone off-station is transmitting.",loc:"Comms Room",src:"Emily",trust:"55+",day:"2",pre:[],cat:"Digital"},
+R2:{id:"R2",layer:4,name:"Signal decoded",full:"Signal Decoded",desc:"Messages from 'I.C.' to 'Danny' — personal, hopeful, longing.",loc:"Comms Room",src:"Emily",trust:"70+",day:"3–4",pre:["R1"],cat:"Digital"},
+R3:{id:"R3",layer:4,name:"Izzy identified",full:"Izzy Identified",desc:"I.C. = Isabelle Cole. Shaw's fiancée is alive.",loc:"Comms Room",src:"Amelia + Emily",trust:"—",day:"4",pre:["R2","C5"],cat:"Deduction"},
+R4:{id:"R4",layer:4,name:"Secure channel",full:"Secure Channel Established",desc:"Emily creates a private channel. Shaw can speak to Izzy.",loc:"Comms Room",src:"Emily",trust:"80+",day:"5",pre:["R3"],cat:"Event"}
+};
+const EDGES=[["S1","S6"],["S1","D1"],["S2","D1"],["S6","D6"],["D2","D3"],["D2","D7"],["D2","C1"],["D3","C1"],["D3","C2"],["S1","C5"],["C1","C3"],["C3","C4"],["C1","C6"],["C5","C6"],["C5","R3"],["R1","R2"],["R2","R3"],["R3","R4"]];
+const order={1:["S3","S4","S5","S7","S1","S2","S6"],2:["D4","D5","D1","D2","D3","D6","D7"],3:["C5","C1","C2","C6","C3","C4"],4:["R1","R2","R3","R4"]};
+const rows={1:"row1",2:"row2",3:"row3",4:"row4"};
+const elMap={};
+for(const[layer,ids] of Object.entries(order)){
+  const container=document.getElementById(rows[layer]);
+  for(const id of ids){
+    const c=CLUES[id];
+    const el=document.createElement("span");
+    el.className="n";
+    el.textContent=c.id+": "+c.name;
+    if(c.req)el.innerHTML=c.id+": "+c.name+'<span class="req">required</span>';
+    el.dataset.id=id;
+    el.onclick=()=>select(id);
+    container.appendChild(el);
+    elMap[id]=el;
+  }
+}
+function getAllPre(id,visited=new Set()){
+  if(visited.has(id))return visited;visited.add(id);
+  for(const p of (CLUES[id].pre||[]))getAllPre(p,visited);
+  return visited;
+}
+function getAllPost(id,visited=new Set()){
+  if(visited.has(id))return visited;visited.add(id);
+  for(const[a,b] of EDGES)if(a===id)getAllPost(b,visited);
+  return visited;
+}
+let selId=null;
+function select(id){
+  selId=id;const c=CLUES[id];
+  const chain=new Set([...getAllPre(id),...getAllPost(id)]);
+  for(const[k,el] of Object.entries(elMap)){
+    el.classList.remove("sel","dim","hi");
+    if(k===id)el.classList.add("sel");
+    else if(chain.has(k))el.classList.add("hi");
+    else el.classList.add("dim");
+  }
+  const unlocks=EDGES.filter(([a])=>a===id).map(([,b])=>CLUES[b].id+": "+CLUES[b].name);
+  const preList=(c.pre||[]).map(p=>CLUES[p].id+": "+CLUES[p].name);
+  const layerNames={1:"Surface",2:"Doubt",3:"Conspiracy",4:"Redemption"};
+  const layerColors={1:"#085041",2:"#854F0B",3:"#A32D2D",4:"#534AB7"};
+  document.getElementById("detail").innerHTML=`
+    <div class="detail-title" style="color:${layerColors[c.layer]}">${c.id}: ${c.full}</div>
+    <div class="detail-row">${c.desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:8px">
+      <div class="detail-row"><b>Layer:</b> ${layerNames[c.layer]}</div>
+      <div class="detail-row"><b>Category:</b> ${c.cat}</div>
+      <div class="detail-row"><b>Location:</b> ${c.loc}</div>
+      <div class="detail-row"><b>Source:</b> ${c.src}</div>
+      <div class="detail-row"><b>Trust needed:</b> ${c.trust}</div>
+      <div class="detail-row"><b>Day available:</b> ${c.day}</div>
+    </div>
+    ${preList.length?`<div class="detail-row" style="margin-top:8px"><b>Requires:</b> ${preList.join(", ")}</div>`:"<div class='detail-row' style='margin-top:8px'><b>Requires:</b> Nothing (entry point)</div>"}
+    ${unlocks.length?`<div class="detail-row"><b>Unlocks:</b> ${unlocks.join(", ")}</div>`:"<div class='detail-row'><b>Unlocks:</b> End of chain</div>"}
+    ${c.req?'<div class="detail-row" style="margin-top:6px;color:#A32D2D"><b>This clue is REQUIRED for the conspiracy ending.</b></div>':""}
+  `;
+  drawArrows(chain);
+}
+function drawArrows(chain){
+  const svg=document.getElementById("arrowSvg");
+  const graph=document.getElementById("graph");
+  const gRect=graph.getBoundingClientRect();
+  svg.setAttribute("viewBox",`0 0 ${gRect.width} ${gRect.height}`);
+  svg.style.height=gRect.height+"px";
+  let paths="";
+  for(const[a,b] of EDGES){
+    const eA=elMap[a],eB=elMap[b];
+    if(!eA||!eB)continue;
+    const rA=eA.getBoundingClientRect(),rB=eB.getBoundingClientRect();
+    const x1=rA.left+rA.width/2-gRect.left;
+    const y1=rA.top+rA.height-gRect.top;
+    const x2=rB.left+rB.width/2-gRect.left;
+    const y2=rB.top-gRect.top;
+    const inChain=chain&&chain.has(a)&&chain.has(b);
+    const color=inChain?"var(--color-text-primary)":"var(--color-border-tertiary)";
+    const opacity=inChain?0.7:0.2;
+    const w=inChain?1.5:0.75;
+    const my=(y1+y2)/2;
+    paths+=`<path d="M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="${w}" opacity="${opacity}" marker-end="url(#ah)"/>`;
+  }
+  svg.innerHTML=svg.querySelector("defs").outerHTML+paths;
+}
+drawArrows(null);
+window.addEventListener("resize",()=>{if(selId)select(selId);else drawArrows(null)});
+</script>

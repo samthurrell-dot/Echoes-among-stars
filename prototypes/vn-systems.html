@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Echoes Among the Stars — VN Systems Build</title>
+<style>
+/* ===== Base / Reset ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#070b14;color:#eaf1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+button{cursor:pointer}
+/* ===== Stage ===== */
+#game-container{position:relative;min-height:100vh;overflow:hidden}
+#game-screen{position:relative;height:68vh;min-height:420px}
+#background-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.95;filter:brightness(.92) saturate(1.05)}
+#character-portrait{position:absolute;right:6%;bottom:8%;width:min(34vw,420px);height:min(60vh,560px);
+  background-size:contain;background-repeat:no-repeat;background-position:bottom right;image-rendering:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6));}
+#choice-buttons{position:absolute;right:6%;bottom:10px;display:flex;flex-direction:column;gap:8px;width:min(36vw,420px);z-index:6}
+.choice-button{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#eaf1ff;padding:10px 12px;border-radius:10px;text-align:left;backdrop-filter:blur(2px)}
+.choice-button:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
+/* ===== Dialogue ===== */
+#dialogue-box{position:relative;margin:0 auto;max-width:1100px;height:32vh;min-height:200px;padding:14px 18px 18px 18px;
+  background:linear-gradient(180deg,rgba(12,16,28,.4),rgba(12,16,28,.85));border-top:1px solid rgba(255,255,255,.12)}
+#character-name{font-weight:700;letter-spacing:.2px;margin-bottom:6px}
+#dialogue-text{font-size:18px;line-height:1.5;min-height:84px}
+.game-button{margin-top:10px;background:#2a3550;border:1px solid #3e517d;color:#eaf1ff;border-radius:10px;padding:8px 12px}
+.game-button:disabled{opacity:.5;cursor:not-allowed}
+/* ===== HUD ===== */
+#hud{position:fixed;top:10px;right:10px;background:rgba(7,11,20,.9);border:1px solid rgba(255,255,255,.12);
+  color:#fff;padding:12px;border-radius:12px;z-index:50;backdrop-filter:blur(3px)}
+.stat{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.stat-label{font-size:12px;color:#b3c0da;width:110px}
+.bar{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.bar>span{display:block;height:100%}
+.trust{background:linear-gradient(90deg,#5ee898,#2bb673)}
+.rep{background:linear-gradient(90deg,#ffd36c,#ffb84a)}
+.toolbar{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.toolbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#eaf1ff;padding:6px 10px;border-radius:10px;font-size:13px}
+/* ===== Modal sheets ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+.modal.active{display:flex}
+.sheet{width:min(960px,100%);max-height:86vh;overflow:auto;background:#0e1423;border:1px solid rgba(255,255,255,.15);border-radius:16px}
+.sheet .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12);position:sticky;top:0;background:#0e1423;z-index:1}
+.sheet .bd{padding:14px}
+.close{background:transparent;border:1px solid rgba(255,255,255,.2);color:#eaf1ff;border-radius:8px;padding:6px 10px}
+/* Map grid */
+.mapgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.loc{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;min-height:120px;background:#0b1220}
+.loc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.8}
+.loc .label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);font-size:13px}
+.loc button{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+/* Evidence */
+.clues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.clue{border:1px dashed rgba(255,255,255,.2);padding:10px;border-radius:10px}
+.sus{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.sus .card{border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px}
+.sus .meter{height:8px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.sus .meter>span{display:block;height:100%;background:linear-gradient(90deg,#a3b3ff,#6e86ff)}
+/* Responsive */
+@media (max-width:860px){#choice-buttons{position:static;width:100%;padding:10px} #character-portrait{right:2%;width:48vw} .mapgrid{grid-template-columns:1fr} .clues{grid-template-columns:1fr} .sus{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div id="game-screen">
+    <img id="background-image" src="" alt="Background"/>
+    <div id="character-portrait"></div>
+    <div id="choice-buttons"></div>
+  </div>
+
+  <div id="dialogue-box">
+    <p id="character-name"></p>
+    <p id="dialogue-text"></p>
+    <button id="progress-button" class="game-button">Continue ►</button>
+  </div>
+
+  <div id="hud">
+    <div class="stat">
+      <span class="stat-label">Captain Trust</span>
+      <div class="bar"><span id="trustBar" class="trust" style="width:50%"></span></div>
+      <span id="captain-trust">50</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Crew Reputation</span>
+      <div class="bar"><span id="repBar" class="rep" style="width:50%"></span></div>
+      <span id="crew-reputation">50</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Day / Actions</span>
+      <span id="dayActions">0 / 0</span>
+    </div>
+    <div class="toolbar">
+      <button class="toolbtn" id="mapBtn">Map</button>
+      <button class="toolbtn" id="evidenceBtn">Evidence</button>
+      <button class="toolbtn" id="reportBtn">Report</button>
+      <button class="toolbtn" id="saveBtn">Save</button>
+      <button class="toolbtn" id="loadBtn">Load</button>
+      <button class="toolbtn" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Map Modal -->
+<div class="modal" id="mapModal">
+  <div class="sheet">
+    <div class="hd"><strong>Ship Map</strong><button class="close" id="mapClose">Close</button></div>
+    <div class="bd mapgrid" id="mapGrid"></div>
+  </div>
+</div>
+
+<!-- Evidence Modal -->
+<div class="modal" id="evidenceModal">
+  <div class="sheet">
+    <div class="hd"><strong>Evidence Board</strong><button class="close" id="evidenceClose">Close</button></div>
+    <div class="bd">
+      <div class="sus" id="susList"></div>
+      <h4 style="margin-top:10px">Clues</h4>
+      <div class="clues" id="clueList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal" id="reportModal">
+  <div class="sheet">
+    <div class="hd"><strong>Daily Report</strong><button class="close" id="reportClose">Close</button></div>
+    <div class="bd">
+      <p>Choose up to <b>2</b> findings to report today.</p>
+      <div id="reportChoices" class="clues"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <button class="toolbtn" id="submitReport">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   ASSET MAPPING
+   Update these paths to match your folders. Filenames with spaces are OK.
+========================= */
+const BG = {
+  docking_bay: "assets/images/Scenes/docking_bay.jpg",
+  command_center: "assets/images/Scenes/command_center.jpg",
+  dining_hall: "assets/images/Scenes/dining_hall.jpg",
+  hallway: "assets/images/Scenes/hallway_meet_cute.jpg",
+  quarters: "assets/images/Scenes/quarters.jpg"
+};
+const PORTRAIT = {
+  Amelia: "assets/images/Characters/Amelia serious.png",
+  Amelia_sad: "assets/images/Characters/Amelia sad.png",
+  Amelia_neutral: "assets/images/Characters/Amelia neutral wonder.png",
+  Lawson: "assets/images/Characters/Sarah.png",
+  Shaw: "assets/images/Characters/Daniel.png",
+  Emily: "assets/images/Characters/Emily.png"
+};
+
+/* =========================
+   CORE STATE
+========================= */
+const saveKey = "echoes-vn-systems-v1";
+let state = {
+  day: 0, actions: 0,
+  captainTrust: 50, crewRep: 50,
+  suspicion: { Lawson: 10, Shaw: 20, Emily: 10 },
+  flags: {}, clues: [], clueAssign: {}, journal: [],
+  currentScene: "d0_arrival", lineIndex: 0, sceneStack: [],
+};
+
+/* =========================
+   VN RENDERING
+========================= */
+const el = (q)=>document.querySelector(q);
+function setBG(key){ el("#background-image").src = BG[key] || ""; }
+function setPortrait(name){ el("#character-portrait").style.backgroundImage = name ? `url('${PORTRAIT[name]||PORTRAIT[name+'_neutral']||""}')` : "none"; }
+function say(name, text){ el("#character-name").textContent = name || ""; el("#dialogue-text").innerHTML = text; }
+function setChoices(choices){ const host=el("#choice-buttons"); host.innerHTML=""; (choices||[]).forEach(ch=>{
+  const b=document.createElement("button"); b.className="choice-button"; b.textContent = ch.text;
+  b.onclick=()=>{ if(ch.effects) ch.effects(); if(ch.next) goto(ch.next); if(ch.nextLines){ pushScene(ch.nextLines); showNext(); } };
+  host.appendChild(b);
+}); el("#progress-button").disabled = !!choices && choices.length>0; }
+function pushScene(lines){ state.sceneStack.push({scene:state.currentScene, idx:state.lineIndex}); state.currentScene="__inline__"; state.inline = lines; state.lineIndex = 0; }
+function popScene(){ const last=state.sceneStack.pop(); if(last){ state.currentScene=last.scene; state.lineIndex=last.idx; } }
+function bumpTrust(v){ state.captainTrust=Math.max(0,Math.min(100,state.captainTrust+v)); }
+function bumpRep(v){ state.crewRep=Math.max(0,Math.min(100,state.crewRep+v)); }
+function bumpSusp(who,v){ state.suspicion[who]=(state.suspicion[who]||0)+v; }
+function flag(k){ state.flags[k]=true; }
+function hasFlag(k){ return !!state.flags[k]; }
+function addClue(id){ if(!state.clues.includes(id)){ state.clues.push(id); toast(`Found clue: ${CLUES[id].name}`); } }
+function toast(t){ console.log(t); }
+
+function renderHUD(){
+  el("#captain-trust").textContent = state.captainTrust;
+  el("#trustBar").style.width = state.captainTrust+"%";
+  el("#crew-reputation").textContent = state.crewRep;
+  el("#repBar").style.width = state.crewRep+"%";
+  el("#dayActions").textContent = state.day+" / "+state.actions;
+}
+/* =========================
+   STORY DATA
+========================= */
+const CLUES = {
+  dup_manifest:{name:"Duplicate Manifest",desc:"Two entries for same crate 3 minutes apart.",weight:8},
+  emily_glance:{name:"Emily’s Glance",desc:"Flinch when manifest mentioned.",weight:5},
+  overlap_shift:{name:"Shaw shift overlap",desc:"He worked both timestamps.",weight:10},
+  whisper_logs:{name:"Hallway whisper",desc:"Someone fears log audit.",weight:6}
+};
+
+const SCENES = {
+  d0_arrival: [
+    { bg:"docking_bay", face:"Amelia", name:"Amelia", text:"Valkyrie‑7. Bigger than the briefings—and lonelier."},
+    { name:"Maintenance", face:null, text:"Welcome aboard, Detective. Captain Lawson's expecting you."},
+    { choices:[
+      { text:"Head to the Command Center", next:"d0_brief" },
+      { text:"Take a moment alone", next:"d0_reflect" }
+    ]}
+  ],
+  d0_reflect: [
+    { name:"Amelia", face:"Amelia_sad", text:"<i>Focus. Families depend on the outcome of this mission.</i>" },
+    { choices:[{text:"Go to the Command Center", next:"d0_brief"}]}
+  ],
+  d0_brief: [
+    { bg:"command_center", face:"Lawson", name:"Captain Lawson", text:"Detective Drake—good. We don't have a crisis, but we do have <i>anomalies</i>."},
+    { name:"Lawson", text:"You'll have limited access tonight. Tomorrow you'll get three actions to investigate. Keep me in the loop." , effects:()=>{ state.day=1; state.actions=3; flag('briefed'); }},
+    { choices:[{text:"Understood.", next:"d1_intro"}]}
+  ],
+
+  d1_intro: [
+    { bg:"quarters", face:"Amelia_neutral", name:"Amelia", text:"Day 1. Start simple. Follow the paper trail."},
+    { choices:[{text:"Open the ship map", effects:()=>openMap()}]}
+  ]
+};
+
+/* Map events = spend one action, discover clue, bump stats */
+const LOCATIONS=[
+  {id:"command_center", name:"Command Center", events:[
+    {need:()=>hasFlag('briefed') && !hasFlag('cc_dup'), run:()=>{ say("Terminal","You skim manifests. A crate is logged twice."); addClue('dup_manifest'); bumpTrust(+3); flag('cc_dup'); }},
+    {need:()=>true, run:()=>{ say("Amelia","Nothing new here right now."); }}
+  ]},
+  {id:"dining_hall", name:"Dining Hall", events:[
+    {need:()=>!hasFlag('emily_met'), run:()=>{ say("Emily","Data integrity is my job. If something's off, I'll find it."); addClue('emily_glance'); flag('emily_met'); }}
+  ]},
+  {id:"docking_bay", name:"Docking Bay", events:[
+    {need:()=>!hasFlag('shaw_seen'), run:()=>{ say("Shaw","Everything that lands goes through me."); addClue('overlap_shift'); bumpSusp('Shaw',+5); flag('shaw_seen'); }}
+  ]},
+  {id:"hallway", name:"Main Hallway", events:[
+    {need:()=>!hasFlag('whisper'), run:()=>{ say("—","Two crew whisper: \"If they check the logs, we're burned.\""); addClue('whisper_logs'); flag('whisper'); }}
+  ]},
+  {id:"quarters", name:"Quarters", events:[
+    {need:()=>true, run:()=>{ say("Amelia","<i>Review notes. Drink water. Keep going.</i>"); bumpTrust(+1); }}
+  ]}
+];
+
+/* =========================
+   FLOW / ENGINE
+========================= */
+function goto(id){
+  state.currentScene=id; state.lineIndex=0; showNext();
+}
+function showNext(){
+  renderHUD();
+  const scene = SCENES[state.currentScene];
+  if(!scene){ // inline or done
+    if(state.inline){ const lines = state.inline; const i = state.lineIndex++;
+      if(i >= lines.length){ state.inline=null; popScene(); showNext(); return; }
+      const L = lines[i];
+      if(L.bg) setBG(L.bg); if(L.face!==undefined) setPortrait(L.face);
+      if(L.effects) L.effects();
+      say(L.name, L.text||"");
+      setChoices(L.choices);
+      return;
+    }
+    say("", ""); setChoices([]); return;
+  }
+  const i = state.lineIndex++;
+  if(i >= scene.length){ // scene ended
+    setChoices([]);
+    return;
+  }
+  const L = scene[i];
+  if(L.bg) setBG(L.bg);
+  if(L.face!==undefined) setPortrait(L.face);
+  if(L.effects) L.effects();
+  say(L.name, L.text||"");
+  setChoices(L.choices);
+}
+el("#progress-button").addEventListener("click", ()=>{
+  // If choices visible, ignore
+  if(el("#choice-buttons").children.length>0) return;
+  showNext();
+});
+
+/* Map modal */
+function openMap(){
+  const host=el("#mapGrid"); host.innerHTML="";
+  LOCATIONS.forEach(loc=>{
+    const cell=document.createElement("div"); cell.className="loc";
+    const img=document.createElement("img"); img.src=BG[loc.id]||""; cell.appendChild(img);
+    const lab=document.createElement("div"); lab.className="label"; lab.textContent=loc.name; cell.appendChild(lab);
+    const btn=document.createElement("button"); btn.onclick=()=>visit(loc.id); cell.appendChild(btn);
+    host.appendChild(cell);
+  });
+  el("#mapModal").classList.add("active");
+}
+
+function visit(id){
+  if(state.actions<=0){ openReport(); return; }
+  state.actions--; renderHUD();
+  const loc = LOCATIONS.find(l=>l.id===id);
+  const evt = (loc.events||[]).find(e=>!e._done && (!e.need || e.need())) || (loc.events||[])[0];
+  if(evt){ evt.run(); if(evt.once!==false) evt._done = true; }
+  // close map and return to VN box
+  el("#mapModal").classList.remove("active");
+  if(state.actions<=0) openReport();
+}
+
+/* Evidence board */
+function renderEvidence(){
+  const susHost=el("#susList"); susHost.innerHTML="";
+  ["Lawson","Shaw","Emily"].forEach(s=>{
+    const card=document.createElement("div"); card.className="card";
+    const h=document.createElement("div"); h.textContent=s; h.style.fontWeight="600"; card.appendChild(h);
+    const m=document.createElement("div"); m.className="meter"; const b=document.createElement("span");
+    b.style.width = Math.min(100,(state.suspicion[s]||0))+"%"; m.appendChild(b); card.appendChild(m);
+    const small=document.createElement("div"); small.style.fontSize="12px"; small.style.opacity=.8; small.textContent="Suspicion: "+(state.suspicion[s]||0);
+    card.appendChild(small); susHost.appendChild(card);
+  });
+  const clueHost=el("#clueList"); clueHost.innerHTML="";
+  state.clues.forEach(id=>{
+    const c = CLUES[id];
+    const row=document.createElement("div"); row.className="clue";
+    row.innerHTML = `<div><strong>${c.name}</strong><div style="opacity:.75;font-size:12px">${c.desc}</div></div>`;
+    const assignBtn=document.createElement("button"); assignBtn.className="toolbtn"; assignBtn.textContent="Assign";
+    const sel=document.createElement("select");
+    sel.innerHTML = "<option value=''>Suspect…</option><option>Lawson</option><option>Shaw</option><option>Emily</option>";
+    assignBtn.onclick=()=>{ const who=sel.value; if(!who) return; const arr = state.clueAssign[id]||(state.clueAssign[id]=[]);
+      if(!arr.includes(who)){ arr.push(who); bumpSusp(who, Math.min(10,c.weight)); renderEvidence(); } };
+    const wrap=document.createElement("div"); wrap.style.display="flex"; wrap.style.gap="8px"; wrap.style.marginTop="8px";
+    wrap.appendChild(sel); wrap.appendChild(assignBtn); row.appendChild(wrap);
+    clueHost.appendChild(row);
+  });
+}
+
+/* Daily Report */
+function openReport(){
+  const host=el("#reportChoices"); host.innerHTML="";
+  state.clues.slice(-5).forEach(id=>{
+    const c=CLUES[id]; const lab=document.createElement("label"); lab.className="clue";
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.value=id; cb.style.marginRight="8px";
+    const t=document.createElement("span"); t.innerHTML = `<strong>${c.name}</strong> — <span style="opacity:.8">${c.desc}</span>`;
+    lab.appendChild(cb); lab.appendChild(t); host.appendChild(lab);
+  });
+  el("#reportModal").classList.add("active");
+}
+function submitReport(){
+  const chosen=[...el("#reportChoices").querySelectorAll("input[type=checkbox]:checked")].map(x=>x.value);
+  const honesty = chosen.length;
+  bumpTrust(5*honesty);
+  bumpRep(honesty===0 ? +8 : honesty===1 ? +4 : -2);
+  // advance day
+  state.day++; state.actions=3;
+  // Day start scene Day 2..5
+  if(state.day<=5){
+    pushScene([{bg:"quarters",face:"Amelia_neutral",name:"Amelia",text:`Day ${state.day}.`},{choices:[{text:"Open the map",effects:()=>openMap()}]}]); showNext();
+  }else{
+    endingCheck();
+  }
+  renderHUD();
+  el("#reportModal").classList.remove("active");
+}
+function endingCheck(){
+  // Simple ending: D unless suspicion on someone >=60 AND trust >=60
+  const sMax = Math.max(state.suspicion.Lawson||0, state.suspicion.Shaw||0, state.suspicion.Emily||0);
+  const t = state.captainTrust;
+  let tier = "D"; if(sMax>=80 && t>=70) tier="S"; else if(sMax>=70) tier="A"; else if(sMax>=60 && t>=60) tier="B"; else if(sMax>=60) tier="C";
+  pushScene([{bg:"command_center",face:"Lawson",name:"Lawson",text:`We have to make a call. Your report is inconclusive.`},
+             {name:"Amelia",text:`<b>Ending: ${tier}</b>. Max suspicion ${sMax}, Captain Trust ${t}.`},
+             {choices:[{text:"Restart (Day 0)",effects:()=>resetGame()}]}]); showNext();
+}
+
+/* Save / Load / Reset */
+function save(){ localStorage.setItem(saveKey, JSON.stringify(state)); toast("Saved."); }
+function load(){ const raw=localStorage.getItem(saveKey); if(!raw) return; state = JSON.parse(raw); renderHUD(); setBG("quarters"); setPortrait("Amelia_neutral"); say("","Loaded."); }
+function resetGame(){ localStorage.removeItem(saveKey); location.reload(); }
+
+/* ---- Rebuilt by Claude, Oct 2026: the original end of this file was lost to file damage. ---- */
+/* Wires */
+el("#mapBtn").onclick=()=>openMap();
+el("#evidenceBtn").onclick=()=>{ renderEvidence(); el("#evidenceModal").classList.add("active"); };
+el("#reportBtn").onclick=()=>openReport();
+el("#saveBtn").onclick=save;
+el("#loadBtn").onclick=load;
+el("#resetBtn").onclick=resetGame;
+el("#mapClose").onclick=()=>el("#mapModal").classList.remove("active");
+el("#evidenceClose").onclick=()=>el("#evidenceModal").classList.remove("active");
+el("#reportClose").onclick=()=>el("#reportModal").classList.remove("active");
+el("#submitReport").onclick=submitReport;
+
+/* Boot */
+renderHUD();
+goto(state.currentScene);
+</script>
+</body>
+</html>

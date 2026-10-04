@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Echoes — VN Day 0 + Systems</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070b14;color:#eaf1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+#game-container{position:relative;min-height:100vh;overflow:hidden}
+#game-screen{position:relative;height:68vh;min-height:420px}
+#background-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.95;filter:brightness(.92)}
+#character-portrait{position:absolute;right:6%;bottom:8%;width:min(34vw,420px);height:min(60vh,560px);
+  background-size:contain;background-repeat:no-repeat;background-position:bottom right;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6));}
+#choice-buttons{position:absolute;right:6%;bottom:10px;display:flex;flex-direction:column;gap:8px;width:min(36vw,420px);z-index:6}
+.choice-button{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#eaf1ff;padding:10px;border-radius:10px;text-align:left}
+#dialogue-box{position:relative;margin:0 auto;max-width:1100px;height:32vh;min-height:200px;padding:14px 18px 18px 18px;background:linear-gradient(180deg,rgba(12,16,28,.4),rgba(12,16,28,.85));border-top:1px solid rgba(255,255,255,.12)}
+#character-name{font-weight:700;margin-bottom:6px}
+#dialogue-text{font-size:18px;line-height:1.5;min-height:84px}
+.game-button{margin-top:10px;background:#2a3550;border:1px solid #3e517d;color:#eaf1ff;border-radius:10px;padding:8px 12px}
+#hud{position:fixed;top:10px;right:10px;background:rgba(7,11,20,.9);border:1px solid rgba(255,255,255,.12);color:#fff;padding:12px;border-radius:12px;z-index:50}
+.stat{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.stat-label{font-size:12px;color:#b3c0da;width:110px}
+.bar{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.bar>span{display:block;height:100%}
+.trust{background:linear-gradient(90deg,#5ee898,#2bb673)}
+.rep{background:linear-gradient(90deg,#ffd36c,#ffb84a)}
+.toolbar{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.toolbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#eaf1ff;padding:6px 10px;border-radius:10px;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+.modal.active{display:flex}
+.sheet{width:min(960px,100%);max-height:86vh;overflow:auto;background:#0e1423;border:1px solid rgba(255,255,255,.15);border-radius:16px}
+.sheet .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12);position:sticky;top:0;background:#0e1423}
+.sheet .bd{padding:14px}
+.mapgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.loc{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;min-height:120px;background:#0b1220}
+.loc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.8}
+.loc .label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);font-size:13px}
+.loc button{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.clues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.clue{border:1px dashed rgba(255,255,255,.2);padding:10px;border-radius:10px}
+.sus{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.sus .card{border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px}
+.sus .meter{height:8px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.sus .meter>span{display:block;height:100%;background:linear-gradient(90deg,#a3b3ff,#6e86ff)}
+</style></head><body>
+<div id="game-container">
+  <div id="game-screen">
+    <img id="background-image" src="" alt="Background"/>
+    <div id="character-portrait"></div>
+    <div id="choice-buttons"></div>
+  </div>
+  <div id="dialogue-box">
+    <p id="character-name"></p>
+    <p id="dialogue-text"></p>
+    <button id="progress-button" class="game-button">Continue ►</button>
+  </div>
+  <div id="hud">
+    <div class="stat"><span class="stat-label">Captain Trust</span><div class="bar"><span id="trustBar" class="trust" style="width:50%"></span></div><span id="captain-trust">50</span></div>
+    <div class="stat"><span class="stat-label">Crew Reputation</span><div class="bar"><span id="repBar" class="rep" style="width:50%"></span></div><span id="crew-reputation">50</span></div>
+    <div class="stat"><span class="stat-label">Day / Actions</span><span id="dayActions">0 / 0</span></div>
+    <div class="toolbar">
+      <button class="toolbtn" id="mapBtn">Map</button>
+      <button class="toolbtn" id="evidenceBtn">Evidence</button>
+      <button class="toolbtn" id="reportBtn">Report</button>
+      <button class="toolbtn" id="saveBtn">Save</button>
+      <button class="toolbtn" id="loadBtn">Load</button>
+      <button class="toolbtn" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal" id="mapModal"><div class="sheet"><div class="hd"><strong>Ship Map</strong><button class="toolbtn" id="mapClose">Close</button></div><div class="bd mapgrid" id="mapGrid"></div></div></div>
+<div class="modal" id="evidenceModal"><div class="sheet"><div class="hd"><strong>Evidence Board</strong><button class="toolbtn" id="evidenceClose">Close</button></div><div class="bd"><div class="sus" id="susList"></div><h4 style="margin-top:10px">Clues</h4><div class="clues" id="clueList"></div></div></div></div>
+<div class="modal" id="reportModal"><div class="sheet"><div class="hd"><strong>Daily Report</strong><button class="toolbtn" id="reportClose">Close</button></div><div class="bd"><p>Choose up to <b>2</b> findings to report today.</p><div id="reportChoices" class="clues"></div><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="toolbtn" id="submitReport">Submit</button></div></div></div></div>
+<script>
+
+/* === Old scenes from your demo (Day 0 content) === */
+const oldScenes = {
+            scene1: {
+                displayName: 'Chapter 1: Arrival',
+                background: "assets/images/Scenes/docking_bay.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "So this is Valkyrie-7. Even more impressive than the briefings suggested."
+                    },
+                    {
+                        character: "Maintenance Worker",
+                        text: "Welcome aboard! First time on Valkyrie-7?"
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Yes, it's my first time here. Any tips for a newcomer?",
+                        crewReputation: 10,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "Happy to help! The observation deck offers a stunning view of Europa. You should check it out when you have time."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "By the way, Captain Lawson asked to see you in the command center. I'd head there when you're ready."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I feel optimistic about this new journey.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    },
+                    {
+                        text: "Just passing through.",
+                        crewReputation: 0,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "Alright then, safe travels."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "The Captain's expecting you in the command center. You'll find it just down the main corridor."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I hope this mission goes smoothly.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    },
+                    {
+                        text: "That's none of your concern.",
+                        crewReputation: -10,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "*Frowns slightly.* Sure thing. Let me know if you need anything."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "Captain Lawson wanted to see you as soon as you arrived. Head to the command center; it's down that way."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I need to keep interactions brief to stay focused.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    }
+                ]
+            },
+            scene2: {
+                displayName: 'Chapter 2: Meeting the Captain',
+                background: "assets/images/Scenes/command_center.jpg",
+                dialogue: [
+                    {
+                        character: "Captain Lawson",
+                        text: "Detective Drake, welcome aboard Valkyrie-7. I trust your journey was uneventful?"
+                    }
+                ],
+                choices: [
+                    {
+                        text: "It was smooth, Captain. Ready to get started.",
+                        captainTrust: 5,
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "Good. We maintain a professional atmosphere here, and I expect no less from our newest addition."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "Understood, Captain. I'll make sure to fit in quickly."
+                            },
+                            {
+                                character: "Captain Lawson",
+                                text: "Here's your room key. I've arranged for a dinner with the department heads this evening. Feel free to head there now or take some time to freshen up first."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*What should I do next?*"
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Go straight to dinner.",
+                                nextScene: "scene3",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to attend dinner immediately');
+                                }
+                            },
+                            {
+                                text: "Head to my room to freshen up first.",
+                                nextScene: "scene3A",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to freshen up before dinner');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "I'm looking forward to meeting the crew, Captain. Anything I should know about them?",
+                        captainTrust: 3,
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "We have a diverse group here. Some can be quite passionate, which is both a strength and a challenge."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "I'll make sure to navigate those dynamics carefully."
+                            },
+                            {
+                                character: "Captain Lawson",
+                                text: "Here's your room key. I've arranged for a dinner with the department heads this evening. Feel free to head there now or take some time to freshen up first."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Go straight to dinner.",
+                                nextScene: "scene3"
+                            },
+                            {
+                                text: "Head to my room to freshen up first.",
+                                nextScene: "scene3A"
+                            }
+                        ]
+                    }
+                ]
+            },
+            scene3: {
+                displayName: "Chapter 3: The Dinner",
+                background: "assets/images/Scenes/dining_hall.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I stepped into the dining room, greeted by warm lighting and the soft hum of conversation."
+                    },
+                    {
+                        character: "Captain Lawson",
+                        text: "Detective Drake, glad you could join us. Let me introduce the team."
+                    },
+                    {
+                        character: "Dr. Liu",
+                        text: "Ah, the new arrival. I hope you enjoy our little corner of space."
+                    },
+                    {
+                        character: "Dr. Rourke",
+                        text: "Detective. I trust you’re here to observe, not interfere."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Ask about the station's mission.",
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "Our primary goal here is to study Europa’s potential for hosting life. It’s fascinating work."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "It must be incredible to be part of something so groundbreaking."
+                            }
+                        ]
+                    },
+                    {
+                        text: "Inquire about the crew’s work.",
+                        nextDialogue: [
+                            {
+                                character: "Dr. Liu",
+                                text: "Our work focuses on analyzing microbial samples. We’re making strides, but there’s so much more to uncover."
+                            },
+                            {
+                                character: "Emily Anderson",
+                                text: "And I ensure all our data makes it back to Earth. It’s a lot of pressure, but worth it."
+                            }
+                        ]
+                    }
+                ],
+                nextScene: "scene4"
+            },
+            scene4: {
+                displayName: 'Chapter 4: ',
+                background: "assets/images/Scenes/dining_hall.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I decided to head straight to dinner."
+                    },
+
+                ],
+            },
+            scene3A: {
+                displayName: 'Chapter 3A: Settling In',
+                background: "assets/images/Scenes/quarters.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I think I'll freshen up first before heading to dinner."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "My quarters are cozy. A quick shower will do me good."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "Hmm, there's a message blinking on my terminal."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Read the email from Captain Lawson.",
+                        modalContent: `
+                            <h2>Welcome to Valkyrie-7</h2>
+                            <p><strong>Welcome to Valkyrie-7, Detective Drake.</strong></p>
+                            <p>I want to extend my personal welcome. Given your role here, it's important for you to understand our protocols, especially in light of… recent challenges. The Valkyrie-7 is a high-stakes environment, and while we trust in your professionalism, please understand thdriguez",
+                        text: "Whoa! Oh, sorry about that! I wasn’t watching where I was going."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "The last thing I expected was to run into someone like this—literally."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Are you always this clumsy?",
+                        crewReputation: -5,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+    from Mum and Dad.",
+                                modalContent: `
+                                    <h2>Hey Rocket Girl!</h2>
+                                    <p><strong>Hey Love!</strong></p>
+                                    <p>We just wanted to send a quick note—words can't express how proud we are of you! First day on a space station, can you believe it? Just remember to keep safe out there and don't go looking for trouble (we know you won't!). When you have a moment, send a message our way, let us know you're okay.</p>
+                                    <p><strong>Love you to the stars and back,</strong><br>Mum and Dad</p>
+                                `,
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Read message from home');
+                                },
+                                followUpChoices: [
+                                    {
+                                        text: "Head to dinner.",
+                                        nextScene: "scene3B",
+                                        onChoiceMade: function() {
+                                            gameState.journal.push('Decided to go to dinner after reading messages');
+                                        }
+                                    },
+                                    {
+                                        text: "Stay in my quarters a bit longer.",
+                                        nextDialogue: [
+                                            {
+                                                character: "Amelia",
+                                                text: "I think I'll take a moment to gather my thoughts before heading to dinner."
+                                            },
+                                            {
+                                                character: "Amelia",
+                                                text: "The messages from the Captain and my parents have given me a lot to think about."
+                                            }
+                                        ],
+                                        nextScene: "scene3B"
+                                    }
+                                ]
+                            },
+                            {
+                                text: "Head to dinner.",
+                                nextScene: "scene3B",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to go to dinner after reading Captain\'s message');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Read the email from Mum and Dad.",
+                        modalContent: `
+                            <h2>Hey Rocket Girl!</h2>
+                            <p><strong>Hey Love!</strong></p>
+                            <p>We just wanted to send a quick note—words can't express how proud we are of you! First day on a space station, can you believe it? Just remember to keep safe out there and don't go looking for trouble (we know you won't!). When you have a moment, send a message our way, let us know you're okay.</p>
+                            <p><strong>Love you to the stars and back,</strong><br>Mum and Dad</p>
+                        `,
+                        onChoiceMade: function() {
+                            gameState.journal.push('Read message from home');
+                        },
+                        followUpChoices: [
+                            {
+                                text: "Read the email from Captain Lawson.",
+                                modalContent: `
+                                    <h2>Welcome to Valkyrie-7</h2>
+                                    <p><strong>Welcome to Valkyrie-7, Detective Drake.</strong></p>
+                                    <p>I want to extend my personal welcome. Given your role here, it's important for you to understand our protocols, especially in light of… recent challenges. The Valkyrie-7 is a high-stakes environment, and while we trust in your professionalism, please understand that this is not your typical assignment.</p>
+                                    <p>I've arranged the dinner tonight so you can meet key members of the crew. Be observant, and if you need anything clarified, don't hesitate to ask.</p>
+                                    <p><strong>Regards,</strong><br>Captain Lawson</p>
+                                `,
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Read welcome message from Captain Lawson');
+                                },
+                                followUpChoices: [
+                                    {
+                                        text: "Head to dinner.",
+                                        nextScene: "scene3B",
+                                        onChoiceMade: function() {
+                                            gameState.journal.push('Decided to go to dinner after reading both messages');
+                                        }
+                                    },
+                                    {
+                                        text: "Stay in my quarters a bit longer.",
+                                        nextDialogue: [
+                                            {
+                                                character: "Amelia",
+                                                text: "I think I'll take a moment to gather my thoughts before heading to dinner."
+                                            },
+                                            {
+                                                character: "Amelia",
+                                                text: "The messages from my parents and the Captain have given me a lot to think about."
+                                            }
+                                        ],
+                                        nextScene: "scene3B"
+                                    }
+                                ]
+                            },
+                            {
+                                text: "Head to dinner.",
+                                nextScene: "scene3B",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to go to dinner after reading message from home');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Head to dinner.",
+                        nextScene: "scene3B",
+                        onChoiceMade: function() {
+                            gameState.journal.push('Decided to go to dinner without reading messages');
+                        }
+                    }
+                ]
+            },
+            scene3B: {
+                displayName: "Chapter 3B: Hallway Encounter",
+                background: "assets/images/Scenes/hallway_meet_cute.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "Exits her quarters, brushing her jacket, and nearly collides with someone rushing through the hallway."
+                    },
+                    {
+                        character: "Max Rodriguez",
+                        text: "Whoa! Oh, sorry about that! I wasn’t watching where I was going."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "The last thing I expected was to run into someone like this—literally."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Are you always this clumsy?",
+                        crewReputation: -5,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Yikes, no need to bite my head off. I said sorry!"
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "It’s fine. Let’s just watch where we’re going next time.",
+                        crewReputation: 0,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Fair enough. Detective Drake, right? I’m Max, lead engineer."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "Guess we’re both still getting our space legs!",
+                        crewReputation: 5,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Ha, I like that. First time on Valkyrie-7 can be disorienting. I'm Max, by the way."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "If I didn’t know better, I’d say you did that on purpose.",
+                        crewReputation: 10,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Well, I didn’t, but I wouldn’t mind taking credit if it means making an impression."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    }
+                ]
+            }
+        
+        };
+/* === Asset maps === */
+const BG = {
+  docking_bay: "assets/images/Scenes/docking_bay.jpg",
+  command_center: "assets/images/Scenes/command_center.jpg",
+  dining_hall: "assets/images/Scenes/dining_hall.jpg",
+  hallway: "assets/images/Scenes/hallway_meet_cute.jpg",
+  quarters: "assets/images/Scenes/quarters.jpg"
+};
+const PORTRAIT = {
+  Amelia: "assets/images/Characters/Amelia serious.png",
+  Amelia_sad: "assets/images/Characters/Amelia sad.png",
+  Amelia_neutral: "assets/images/Characters/Amelia neutral wonder.png",
+  Lawson: "assets/images/Characters/Sarah.png",
+  Shaw: "assets/images/Characters/Daniel.png",
+  Emily: "assets/images/Characters/Emily.png"
+};
+
+/* === Core state === */
+const saveKey = "echoes-day0-systems-vn";
+let state = {
+  day:0, actions:0,
+  captainTrust:50, crewRep:50,
+  suspicion:{Lawson:10, Shaw:20, Emily:10},
+  flags:{}, clues:[], clueAssign:{}, journal:[],
+  mode:"day0",   // 'day0' (VN-only) -> 'loop'
+  current:{ id:"scene1", idx:0, inline:null }
+};
+
+/* === VN helpers === */
+const el=(q)=>document.querySelector(q);
+function setBG(path){ document.querySelector("#background-image").src = path; }
+function setBGKey(key){ setBG(BG[key]||key||""); }
+function setPortrait(name){ document.querySelector("#character-portrait").style.backgroundImage = name?`url('${PORTRAIT[name]||PORTRAIT[name+'_neutral']||""}')`:"none"; }
+function say(name,text){ document.querySelector("#character-name").textContent=name||""; document.querySelector("#dialogue-text").innerHTML=text||""; }
+function setChoices(choices){ const host=document.querySelector("#choice-buttons"); host.innerHTML=""; (choices||[]).forEach(ch=>{ const b=document.createElement("button"); b.className="choice-button"; b.textContent=ch.text; b.onclick=ch.on; host.appendChild(b); }); document.querySelector("#progress-button").disabled = (choices && choices.length>0); }
+function renderHUD(){ document.querySelector("#captain-trust").textContent=state.captainTrust; document.querySelector("#trustBar").style.width=state.captainTrust+"%"; document.querySelector("#crew-reputation").textContent=state.crewRep; document.querySelector("#repBar").style.width=state.crewRep+"%"; document.querySelector("#dayActions").textContent=state.day+" / "+state.actions; }
+function bumpTrust(v){ state.captainTrust=Math.max(0,Math.min(100,state.captainTrust+v)); }
+function bumpRep(v){ state.crewRep=Math.max(0,Math.min(100,state.crewRep+v)); }
+
+/* === Day 0 player of oldScenes === */
+function playOldScene(id){ state.current={ id, idx:0, inline:null }; showOld(); }
+function showOld(){
+  renderHUD();
+  const sc = oldScenes[state.current.id];
+  if(!sc) return;
+  if(state.current.idx===0 && sc.background) setBG(sc.background);
+  // If inline dialogue (from a choice's nextDialogue) is running
+  if(state.current.inline){
+    const arr = state.current.inline;
+    const i = state.current.idx;
+    if(i >= arr.length){ state.current.inline=null; state.current.idx=0; 
+      if(state.pendingNext){ const nxt=state.pendingNext; state.pendingNext=null; playOldScene(nxt); return; }
+      setChoices([]); return;
+    }
+    const L = arr[i]; state.current.idx++;
+    say(L.character||"", L.text||"");
+    setPortrait(L.character==="Amelia"?"Amelia": (L.character && L.character.includes("Captain")?"Lawson": null));
+    setChoices([]);
+    return;
+  }
+  // Normal scene dialogue first
+  const dia = sc.dialogue||[];
+  if(state.current.idx < dia.length){
+    const L = dia[state.current.idx++];
+    say(L.character||"", L.text||"");
+    setPortrait(L.character==="Amelia"?"Amelia": (L.character && L.character.includes("Captain")?"Lawson": (L.character && L.character.includes("Maintenance")?null:null)));
+    setChoices([]);
+    return;
+  }
+  // Then choices (no actions consumed in Day 0)
+  const chs = sc.choices||[];
+  if(chs.length>0){
+    const mapped = chs.map(ch=>({
+      text: ch.text,
+      on: ()=>{ if(ch.crewReputation) bumpRep(ch.crewReputation); if(ch.captainTrust) bumpTrust(ch.captainTrust);
+                if(ch.nextDialogue){ state.current.inline = ch.nextDialogue; state.current.idx=0; state.pendingNext = ch.nextScene||null; showOld(); return; }
+                if(ch.nextScene){ playOldScene(ch.nextScene); return; }
+              }
+    }));
+    setChoices(mapped);
+    return;
+  }
+  // Follow-up choices if defined
+  if(sc.followUpChoices && sc.followUpChoices.length>0){
+    const mapped = sc.followUpChoices.map(ch=>({ text: ch.text, on: ()=>{ if(ch.nextScene) playOldScene(ch.nextScene); } }));
+    setChoices(mapped); return;
+  }
+  // If we reach the end of Day 0 content, handoff to Day 1 systems loop
+  setChoices([{text:"Start Day 1", on:()=>startDay1()}]);
+}
+document.querySelector("#progress-button").addEventListener("click",()=>{ if(document.querySelector("#choice-buttons").children.length===0){ if(state.mode==='day0') showOld(); else showNext(); } });
+
+/* === Systems loop (Day 1+) — hidden during Day 0 === */
+const CLUES = {
+  dup_manifest:{name:"Duplicate Manifest",desc:"Two entries for same crate 3 minutes apart.",weight:8},
+  emily_glance:{name:"Emily’s Glance",desc:"Flinch when manifest mentioned.",weight:5},
+  overlap_shift:{name:"Shaw shift overlap",desc:"He worked both timestamps.",weight:10},
+  whisper_logs:{name:"Hallway whisper",desc:"Someone fears log audit.",weight:6}
+};
+const LOCATIONS=[
+  {id:"command_center", name:"Command Center", bg:BG.command_center, events:[
+    {need:()=>true && !state.flags.cc_dup, run:()=>{ say("Terminal","You skim manifests. A crate is logged twice."); state.flags.cc_dup=true; state.clues.push("dup_manifest"); bumpTrust(+3); } },
+  ]},
+  {id:"dining_hall", name:"Dining Hall", bg:BG.dining_hall, events:[
+    {need:()=>!state.flags.emily_met, run:()=>{ say("Emily","If something's off, I'll find it."); state.flags.emily_met=true; state.clues.push("emily_glance"); } }
+  ]},
+  {id:"docking_bay", name:"Docking Bay", bg:BG.docking_bay, events:[
+    {need:()=>!state.flags.shaw_seen, run:()=>{ say("Shaw","Everything that lands goes through me."); state.flags.shaw_seen=true; state.clues.push("overlap_shift"); } }
+  ]},
+  {id:"hallway", name:"Hallway", bg:BG.hallway, events:[
+    {need:()=>!state.flags.whisper, run:()=>{ say("—","\"If they check the logs, we're burned.\""); state.flags.whisper=true; state.clues.push("whisper_logs"); } }
+  ]},
+  {id:"quarters", name:"Quarters", bg:BG.quarters, events:[
+    {need:()=>true, run:()=>{ say("Amelia","<i>Review notes. Keep going.</i>"); } }
+  ]},
+];
+
+/* Simple Day 1 intro scene */
+const SCENES = {
+  d1_intro:[
+    { bg:BG.quarters, name:"Amelia", text:"Day 1." },
+    { choices:[{text:"Open Map", on:()=>openMap()}] }
+  ]
+};
+function showNext(){
+  const arr = SCENES[state.current.id]||[];
+  const i = state.current.idx++;
+  if(i>=arr.length){ setChoices([]); return; }
+  const L = arr[i];
+  if(L.bg) setBG(L.bg);
+  say(L.name||"", L.text||"");
+  setChoices(L.choices || []);
+}
+
+/* Map modal */
+function openMap(){
+  const host=document.querySelector("#mapGrid"); host.innerHTML="";
+  LOCATIONS.forEach(loc=>{
+    const div=document.createElement("div"); div.className="loc";
+    const img=document.createElement("img"); img.src=loc.bg; div.appendChild(img);
+    const lab=document.createElement("div"); lab.className="label"; lab.textContent=loc.name; div.appendChild(lab);
+    const btn=document.createElement("button"); btn.onclick=()=>visit(loc.id); div.appendChild(btn);
+    host.appendChild(div);
+  });
+  document.querySelector("#mapModal").classList.add("active");
+}
+function visit(id){
+  if(state.mode==='day0') return; // Day 0 doesn't use map/actions
+  if(state.actions<=0){ openReport(); return; }
+  state.actions--; renderHUD();
+  const loc=LOCATIONS.find(l=>l.id===id);
+  const evt=(loc.events||[]).find(e=>!e._done && (!e.need || e.need())) || (loc.events||[])[0];
+  if(evt){ evt.run(); if(evt.once!==false) evt._done=true; }
+  document.querySelector("#mapModal").classList.remove("active");
+  if(state.actions<=0) openReport();
+}
+
+/* Evidence + Report (disabled in Day 0) */
+function renderEvidence(){
+  if(state.mode==='day0') return;
+  const sus=document.querySelector("#susList"); sus.innerHTML="";
+  ["Lawson","Shaw","Emily"].forEach(s=>{
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML = "<div style='font-weight:600'>"+s+"</div><div class='meter'><span style='display:block;height:8px;background:linear-gradient(90deg,#a3b3ff,#6e86ff);width:0%'></span></div>";
+    sus.appendChild(c);
+  });
+  const clues=document.querySelector("#clueList"); clues.innerHTML="";
+  state.clues.forEach(id=>{ const row=document.createElement("div"); row.className="clue"; row.textContent=CLUES[id].name+" — "+CLUES[id].desc; clues.appendChild(row); });
+}
+function openReport(){
+  if(state.mode==='day0') return;
+  const host=document.querySelector("#reportChoices"); host.innerHTML="";
+  state.clues.slice(-5).forEach(id=>{ const c=CLUES[id]; const lab=document.createElement("label"); lab.className="clue"; const cb=document.createElement("input"); cb.type="checkbox"; cb.value=id; cb.style.marginRight="8px"; lab.appendChild(cb); lab.appendChild(document.createTextNode(c.name+" — "+c.desc)); host.appendChild(lab); });
+  document.querySelector("#reportModal").classList.add("active");
+}
+function submitReport(){
+  const chosen=[...document.querySelectorAll("#reportChoices input:checked")].map(x=>x.value);
+  bumpTrust(5*chosen.length);
+  bumpRep(chosen.length===0?+8:chosen.length===1?+4:-2);
+  state.day++; state.actions=3; // next day
+  document.querySelector("#reportModal").classList.remove("active");
+  state.current={id:"d1_intro", idx:0}; showNext(); renderHUD();
+}
+/* Start Day 1 */
+function startDay1(){
+  state.mode='loop'; state.day=1; state.actions=3; renderHUD();
+  setBG(BG.quarters); say("Amelia","Day 1."); setChoices([{text:"Open Map", on:()=>openMap()}]);
+}
+
+/* Save/Load/Reset */
+function save(){ localStorage.setItem(saveKey, JSON.stringify(state)); }
+function load(){ const raw=localStorage.getItem(saveKey); if(!raw) return; state=JSON.parse(raw); renderHUD(); say("","Loaded."); }
+function resetGame(){ localStorage.removeItem(saveKey); location.reload(); }
+
+/* HUD buttons */
+document.querySelector("#mapBtn").onclick=()=>{ if(state.mode==='day0') return; openMap(); };
+document.querySelector("#evidenceBtn").onclick=()=>{ if(state.mode==='day0') return; renderEvidence(); document.querySelector("#evidenceModal").classList.add("active"); };
+document.querySelector("#reportBtn").onclick=()=>{ if(state.mode==='day0') return; openReport(); };
+document.querySelector("#mapClose").onclick=()=>document.querySelector("#mapModal").classList.remove("active");
+/* ---- Rebuilt by Claude, Oct 2026: the original end of this file was lost to file damage. ---- */
+document.querySelector("#evidenceClose").onclick=()=>document.querySelector("#evidenceModal").classList.remove("active");
+document.querySelector("#reportClose").onclick=()=>document.querySelector("#reportModal").classList.remove("active");
+document.querySelector("#submitReport").onclick=submitReport;
+document.querySelector("#saveBtn").onclick=save;
+document.querySelector("#loadBtn").onclick=load;
+document.querySelector("#resetBtn").onclick=resetGame;
+
+/* Boot */
+renderHUD();
+playOldScene(state.current.id);
+</script>
+</body>
+</html>

@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echoes Among the Stars - Game UI</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Game Container */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Game Screen */
+        #game-screen {
+            width: 100%;
+            height: 80vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Character Portrait */
+        #character-portrait {
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            width: 300px;
+            height: auto;
+            z-index: 2;
+        }
+
+        #character-portrait img {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Dialogue Box */
+        #dialogue-box {
+            position: relative;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.8);
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 3;
+            min-height: 150px;
+        }
+
+        #character-name {
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            color: #4a9eff;
+        }
+
+        #dialogue-text {
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+            font-size: 1.1em;
+        }
+
+        /* Buttons */
+        .game-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            z-index: 4;
+        }
+
+        .game-button:hover {
+            background-color: #333;
+            border-color: #444;
+            transform: translateY(-2px);
+        }
+
+        .game-button.next {
+            background-color: #2a6ba3;
+            border-color: #3580c1;
+        }
+
+        .game-button.next:hover {
+            background-color: #3580c1;
+            border-color: #4591d2;
+        }
+
+        /* Choice Buttons */
+        #choice-buttons {
+            position: absolute;
+            right: 20px;
+            top: 60%;
+            display: flex;
+            flex-direction: column;
+            width: 500px;
+            z-index: 3;
+            transform: translateY(-50%);
+        }
+
+        .choice-button {
+            background-color: rgba(26, 26, 26, 0.9);
+            color: #fff;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .choice-button:hover {
+            background-color: #333;
+            transform: translateX(-5px);
+        }
+
+        .choice-button.disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(20, 20, 20, 0.9);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            z-index: 1000;
+            border: 1px solid #333;
+        }
+
+        .stat {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #888;
+        }
+
+        #crew-reputation,
+        #captain-trust {
+            color: #4a9eff;
+            font-weight: bold;
+        }
+
+        /* Menu */
+        #hamburger-icon {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 1001;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+        }
+
+        #hamburger-icon div {
+            width: 100%;
+            height: 3px;
+            background-color: #fff;
+            margin: 5px 0;
+            transition: 0.4s;
+            border-radius: 3px;
+        }
+
+        /* Sidebar */
+        #sidebar-menu {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            background-color: rgba(10, 10, 10, 0.95);
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+        }
+
+        #close-button {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 36px;
+            cursor: pointer;
+            color: #fff;
+            transition: 0.3s;
+        }
+
+        #close-button:hover {
+            color: #4a9eff;
+        }
+
+        .chapter-link {
+            padding: 12px 32px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #fff;
+            display: block;
+            transition: 0.3s;
+            border-bottom: 1px solid #333;
+        }
+
+        .chapter-link:hover {
+            background-color: #2a6ba3;
+            padding-left: 40px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1002;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #333;
+            width: 80%;
+            max-width: 800px;
+            color: #fff;
+            position: relative;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .modal-close-button:hover {
+            color: #fff;
+        }
+
+        #modal-body {
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        /* Inventory Button */
+        #inventory-button {
+            position: fixed;
+            top: 10px;
+            left: 60px;
+            padding: 8px 16px;
+            background-color: #1a1a1a;
+            color: #fff;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1001;
+            transition: all 0.2s ease;
+        }
+
+        #inventory-button:hover {
+            background-color: #333;
+            border-color: #444;
+            transform: translateY(-2px);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #choice-buttons {
+                width: 90%;
+                right: 5%;
+            }
+
+            #character-portrait {
+                width: 200px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-screen">
+            <img id="background-image" src="" alt="Background">
+            <div id="character-portrait"></div>
+            <div id="choice-buttons"></div>
+        </div>
+
+        <div id="dialogue-box">
+            <p id="character-name"></p>
+            <p id="dialogue-text"></p>
+            <button id="progress-button" class="game-button">Continue ►</button>
+        </div>
+
+        <div id="hud">
+            <div class="stat">
+                <span class="stat-label">Crew Reputation:</span>
+                <span id="crew-reputation">50</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Captain's Trust:</span>
+                <span id="captain-trust">50</span>
+            </div>
+        </div>
+
+        <div id="hamburger-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+
+        <button id="inventory-button">Journal</button>
+
+        <div id="sidebar-menu">
+            <a href="javascript:void(0)" id="close-button">&times;</a>
+            <div id="chapter-links"></div>
+        </div>
+    </div>
+
+    <div id="modal-window" class="modal">
+        <div class="modal-content">
+            <span id="modal-close-button" class="modal-close-button">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            currentScene: 'scene1',
+            crewReputation: 50,
+            captainTrust: 50,
+            dialogueIndex: 0,
+            currentDialogue: [],
+            choicesAvailable: false,
+            nextScene: null,
+            isTransitioningScene: false,
+            currentChoice: null,
+            inventory: [],
+            journal: [],
+            modalActive: false
+        };
+
+        // Scene Data
+        const scenes = {
+            scene1: {
+                displayName: 'Chapter 1: Arrival',
+                background: "assets/images/Scenes/docking_bay.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "So this is Valkyrie-7. Even more impressive than the briefings suggested."
+                    },
+                    {
+                        character: "Maintenance Worker",
+                        text: "Welcome aboard! First time on Valkyrie-7?"
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Yes, it's my first time here. Any tips for a newcomer?",
+                        crewReputation: 10,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "Happy to help! The observation deck offers a stunning view of Europa. You should check it out when you have time."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "By the way, Captain Lawson asked to see you in the command center. I'd head there when you're ready."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I feel optimistic about this new journey.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    },
+                    {
+                        text: "Just passing through.",
+                        crewReputation: 0,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "Alright then, safe travels."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "The Captain's expecting you in the command center. You'll find it just down the main corridor."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I hope this mission goes smoothly.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    },
+                    {
+                        text: "That's none of your concern.",
+                        crewReputation: -10,
+                        nextDialogue: [
+                            {
+                                character: "Maintenance Worker",
+                                text: "*Frowns slightly.* Sure thing. Let me know if you need anything."
+                            },
+                            {
+                                character: "Maintenance Worker",
+                                text: "Captain Lawson wanted to see you as soon as you arrived. Head to the command center; it's down that way."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*I need to keep interactions brief to stay focused.*"
+                            }
+                        ],
+                        nextScene: "scene2"
+                    }
+                ]
+            },
+            scene2: {
+                displayName: 'Chapter 2: Meeting the Captain',
+                background: "assets/images/Scenes/command_center.jpg",
+                dialogue: [
+                    {
+                        character: "Captain Lawson",
+                        text: "Detective Drake, welcome aboard Valkyrie-7. I trust your journey was uneventful?"
+                    }
+                ],
+                choices: [
+                    {
+                        text: "It was smooth, Captain. Ready to get started.",
+                        captainTrust: 5,
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "Good. We maintain a professional atmosphere here, and I expect no less from our newest addition."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "Understood, Captain. I'll make sure to fit in quickly."
+                            },
+                            {
+                                character: "Captain Lawson",
+                                text: "Here's your room key. I've arranged for a dinner with the department heads this evening. Feel free to head there now or take some time to freshen up first."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "*What should I do next?*"
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Go straight to dinner.",
+                                nextScene: "scene3",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to attend dinner immediately');
+                                }
+                            },
+                            {
+                                text: "Head to my room to freshen up first.",
+                                nextScene: "scene3A",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to freshen up before dinner');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "I'm looking forward to meeting the crew, Captain. Anything I should know about them?",
+                        captainTrust: 3,
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "We have a diverse group here. Some can be quite passionate, which is both a strength and a challenge."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "I'll make sure to navigate those dynamics carefully."
+                            },
+                            {
+                                character: "Captain Lawson",.journal.push('Decided to go to dinner after reading Captain\'s message');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Read the email from Mum and Dad.",
+                        modalContent: `
+                            <h2>Hey Rocket Girl!</h2>
+                            <p><strong>Hey Love!</strong></p>
+                            <p>We just wanted to send a quick note—words can't express how proud we are of you! First day on a space station, can you believe it? Just remember to keep safe out there and don't go looking for trou   }
+                        ]
+                    }
+                ]
+            },
+            scene3: {
+                displayName: "Chapter 3: The Dinner",
+                background: "assets/images/Scenes/dining_hall.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I stepped into the dining room, greeted by warm lighting and the soft hum of conversation."
+                    },
+                    {
+                        character: "Captain Lawson",
+                        text: "Detective Drake, glad you could join us. Let me introduce the team."
+                    },
+                    {
+                        character: "Dr. Liu",
+                        text: "Ah, the new arrival. I hope you enjoy our little corner of space."
+                    },
+                    {
+                        character: "Dr. Rourke",
+                        text: "Detective. I trust you’re here to observe, not interfere."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Ask about the station's mission.",
+                        nextDialogue: [
+                            {
+                                character: "Captain Lawson",
+                                text: "Our primary goal here is to study Europa’s potential for hosting life. It’s fascinating work."
+                            },
+                            {
+                                character: "Amelia",
+                                text: "It must be incredible to be part of something so groundbreaking."
+                            }
+                        ]
+                    },
+                    {
+                        text: "Inquire about the crew’s work.",
+                        nextDialogue: [
+                            {
+                                character: "Dr. Liu",
+                                text: "Our work focuses on analyzing microbial samples. We’re making strides, but there’s so much more to uncover."
+                            },
+                            {
+                                character: "Emily Anderson",
+                                text: "And I ensure all our data makes it back to Earth. It’s a lot of pressure, but worth it."
+                            }
+                        ]
+                    }
+                ],
+                nextScene: "scene4"
+            },
+            scene4: {
+                displayName: 'Chapter 4: ',
+                background: "assets/images/Scenes/dining_hall.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I decided to head straight to dinner."
+                    },
+
+                ],
+            },
+            scene3A: {
+                displayName: 'Chapter 3A: Settling In',
+                background: "assets/images/Scenes/quarters.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "I think I'll freshen up first before heading to dinner."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "My quarters are cozy. A quick shower will do me good."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "Hmm, there's a message blinking on my terminal."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Read the email from Captain Lawson.",
+                        modalContent: `
+                            <h2>Welcome to Valkyrie-7</h2>
+                            <p><strong>Welcome to Valkyrie-7, Detective Drake.</strong></p>
+                            <p>I want to extend my personal welcome. Given your role here, it's important for you to understand our protocols, especially in light of… recent challenges. The Valkyrie-7 is a high-stakes environment, and while we trust in your professionalism, please understand that this is not your typical assignment.</p>
+                            <p>I've arranged the dinner tonight so you can meet key members of the crew. Be observant, and if you need anything clarified, don't hesitate to ask.</p>
+                            <p><strong>Regards,</strong><br>Captain Lawson</p>
+                        `,
+                        onChoiceMade: function() {
+                            gameState.journal.push('Read welcome message from Captain Lawson');
+                        },
+                        followUpChoices: [
+                            {
+                                text: "Read the email from Mum and Dad.",
+                                modalContent: `
+                                    <h2>Hey Rocket Girl!</h2>
+                                    <p><strong>Hey Love!</strong></p>
+                                    <p>We just wanted to send a quick note—words can't express how proud we are of you! First day on a space station, can you believe it? Just remember to keep safe out there and don't go looking for trouble (we know you won't!). When you have a moment, send a message our way, let us know you're okay.</p>
+                                    <p><strong>Love you to the stars and back,</strong><br>Mum and Dad</p>
+                                `,
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Read message from home');
+                                },
+                                followUpChoices: [
+                                    {
+                                        text: "Head to dinner.",
+                                        nextScene: "scene3B",
+                                        onChoiceMade: function() {
+                                            gameState.journal.push('Decided to go to dinner after reading messages');
+                                        }
+                                    },
+                                    {
+                                        text: "Stay in my quarters a bit longer.",
+                                        nextDialogue: [
+                                            {
+                                                character: "Amelia",
+                                                text: "I think I'll take a moment to gather my thoughts before heading to dinner."
+                                            },
+                                            {
+                                                character: "Amelia",
+                                                text: "The messages from the Captain and my parents have given me a lot to think about."
+                                            }
+                                        ],
+                                        nextScene: "scene3B"
+                                    }
+                                ]
+                            },
+                            {
+                                text: "Head to dinner.",
+                                nextScene: "scene3B",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to go to dinner after reading Captain\'s message');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Read the email from Mum and Dad.",
+                        modalContent: `
+                            <h2>Hey Rocket Girl!</h2>
+                            <p><strong>Hey Love!</strong></p>
+                            <p>We just wanted to send a quick note—words can't express how proud we are of you! First day on a space station, can you believe it? Just remember to keep safe out there and don't go looking for trouble (we know you won't!). When you have a moment, send a message our way, let us know you're okay.</p>
+                            <p><strong>Love you to the stars and back,</strong><br>Mum and Dad</p>
+                        `,
+                        onChoiceMade: function() {
+                            gameState.journal.push('Read message from home');
+                        },
+                        followUpChoices: [
+                            {
+                                text: "Read the email from Captain Lawson.",
+                                modalContent: `
+                                    <h2>Welcome to Valkyrie-7</h2>
+                                    <p><strong>Welcome to Valkyrie-7, Detective Drake.</strong></p>
+                                    <p>I want to extend my personal welcome. Given your role here, it's important for you to understand our protocols, especially in light of… recent challenges. The Valkyrie-7 is a high-stakes environment, and while we trust in your professionalism, please understand that this is not your typical assignment.</p>
+                                    <p>I've arranged the dinner tonight so you can meet key members of the crew. Be observant, and if you need anything clarified, don't hesitate to ask.</p>
+                                    <p><strong>Regards,</strong><br>Captain Lawson</p>
+                                `,
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Read welcome message from Captain Lawson');
+                                },
+                                followUpChoices: [
+                                    {
+                                        text: "Head to dinner.",
+                                        nextScene: "scene3B",
+                                        onChoiceMade: function() {
+                                            gameState.journal.push('Decided to go to dinner after reading both messages');
+                                        }
+                                    },
+                                    {
+                                        text: "Stay in my quarters a bit longer.",
+                                        nextDialogue: [
+                                            {
+                                                character: "Amelia",
+                                                text: "I think I'll take a moment to gather my thoughts before heading to dinner."
+                                            },
+                                            {
+                                                character: "Amelia",
+                                                text: "The messages from my parents and the Captain have given me a lot to think about."
+                                            }
+                                        ],
+                                        nextScene: "scene3B"
+                                    }
+                                ]
+                            },
+                            {
+                                text: "Head to dinner.",
+                                nextScene: "scene3B",
+                                onChoiceMade: function() {
+                                    gameState.journal.push('Decided to go to dinner after reading message from home');
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Head to dinner.",
+                        nextScene: "scene3B",
+                        onChoiceMade: function() {
+                            gameState.journal.push('Decided to go to dinner without reading messages');
+                        }
+                    }
+                ]
+            },
+            scene3B: {
+                displayName: "Chapter 3B: Hallway Encounter",
+                background: "assets/images/Scenes/hallway_meet_cute.jpg",
+                dialogue: [
+                    {
+                        character: "Amelia",
+                        text: "Exits her quarters, brushing her jacket, and nearly collides with someone rushing through the hallway."
+                    },
+                    {
+                        character: "Max Rodriguez",
+                        text: "Whoa! Oh, sorry about that! I wasn’t watching where I was going."
+                    },
+                    {
+                        character: "Amelia",
+                        text: "The last thing I expected was to run into someone like this—literally."
+                    }
+                ],
+                choices: [
+                    {
+                        text: "Are you always this clumsy?",
+                        crewReputation: -5,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Yikes, no need to bite my head off. I said sorry!"
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "It’s fine. Let’s just watch where we’re going next time.",
+                        crewReputation: 0,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Fair enough. Detective Drake, right? I’m Max, lead engineer."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "Guess we’re both still getting our space legs!",
+                        crewReputation: 5,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Ha, I like that. First time on Valkyrie-7 can be disorienting. I'm Max, by the way."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    },
+                    {
+                        text: "If I didn’t know better, I’d say you did that on purpose.",
+                        crewReputation: 10,
+                        nextDialogue: [
+                            {
+                                character: "Max Rodriguez",
+                                text: "Well, I didn’t, but I wouldn’t mind taking credit if it means making an impression."
+                            }
+                        ],
+                        followUpChoices: [
+                            {
+                                text: "Let’s move on.",
+                                nextScene: "scene3"
+                            }
+                        ]
+                    }
+                ]
+            }
+        
+        };
+
+
+        // Core Functions
+        function loadScene(sceneName) {
+            const sceneData = scenes[sceneName];
+            if (!sceneData) {
+                console.error('Scene not found:', sceneName);
+                return;
+            }
+
+            // Reset scene state
+            gameState.currentScene = sceneName;
+            gameState.dialogueIndex = 0;
+            gameState.currentDialogue = sceneData.dialogue;
+            gameState.choicesAvailable = false;
+            gameState.nextScene = null;
+            gameState.isTransitioningScene = false;
+            gameState.currentChoice = null;
+            gameState.modalActive = false;
+
+            // Update UI
+            const backgroundImg = document.getElementById('background-image');
+            backgroundImg.src = sceneData.background;
+            backgroundImg.classList.add('fade-in');
+
+            document.getElementById('character-portrait').innerHTML = '';
+            document.getElementById('choice-buttons').innerHTML = '';
+
+            gameState.currentSceneData = sceneData;
+            updateProgressButton();
+            showNextDialogue();
+        }
+
+function showNextDialogue() {
+    if (gameState.modalActive || gameState.choicesAvailable) return;
+
+    if (gameState.isTransitioningScene) {
+        loadScene(gameState.nextScene);
+        return;
+    }
+
+    if (gameState.currentDialogue && gameState.dialogueIndex < gameState.currentDialogue.length) {
+        const line = gameState.currentDialogue[gameState.dialogueIndex];
+        updateCharacterPortrait(line.character);
+        document.getElementById('character-name').textContent = line.character;
+        document.getElementById('dialogue-text').textContent = line.text;
+        gameState.dialogueIndex++;
+    } else {
+        // End of dialogue handling
+        if (gameState.nextScene) {
+            // If there's a next scene queued up, transition to it
+            gameState.isTransitioningScene = true;
+        } else if (gameState.currentChoice && gameState.currentChoice.followUpChoices) {
+            // If there are follow-up choices, show them
+            showChoices(gameState.currentChoice.followUpChoices);
+            gameState.choicesAvailable = true;
+        } else if (gameState.currentSceneData.choices && !gameState.choicesAvailable) {
+            // If there are scene choices and we haven't shown them yet, show them
+            showChoices(gameState.currentSceneData.choices);
+            gameState.choicesAvailable = true;
+        }
+    }
+    
+    updateProgressButton();
+}
+
+        function updateCharacterPortrait(character) {
+            const portraits = {
+                'Amelia': 'assets/images/Characters/Amelia_serious.png',
+                'Maintenance Worker': 'assets/images/Characters/maintenance_worker.png',
+                'Captain Lawson': 'assets/images/Characters/sarah.png',
+                'Head Scientist': 'assets/images/Characters/head_scientist.png'
+            };
+
+            const portraitContainer = document.getElementById('character-portrait');
+            if (portraits[character]) {
+                portraitContainer.innerHTML = `<img src="${portraits[character]}" alt="${character}" class="fade-in">`;
+            } else {
+                portraitContainer.innerHTML = '';
+            }
+        }
+
+        function updateProgressButton() {
+            const button = document.getElementById('progress-button');
+            button.classList.toggle('hidden', gameState.choicesAvailable);
+            button.classList.toggle('next', gameState.isTransitioningScene);
+            button.textContent = gameState.isTransitioningScene ? 'Next Scene ►►' : 'Continue ►';
+        }
+
+        function showChoices(choices) {
+            const choiceContainer = document.getElementById('choice-buttons');
+            choiceContainer.innerHTML = '';
+
+            choices.forEach(choice => {
+                if (choice.condition && !evaluateCondition(choice.condition)) return;
+
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.classList.add('choice-button', 'fade-in');
+                
+                if (!choice.disabled) {
+                    button.onclick = () => makeChoice(choice);
+                } else {
+                    button.classList.add('disabled');
+                    button.disabled = true;
+                }
+
+                choiceContainer.appendChild(button);
+            });
+        }
+
+function makeChoice(choice) {
+    gameState.currentChoice = choice;
+    document.getElementById('choice-buttons').innerHTML = '';
+    gameState.choicesAvailable = false;
+
+    // Handle stats changes
+    if (choice.crewReputation !== undefined) {
+        gameState.crewReputation += choice.crewReputation;
+        document.getElementById('crew-reputation').textContent = gameState.crewReputation;
+    }
+
+    if (choice.captainTrust !== undefined) {
+        gameState.captainTrust += choice.captainTrust;
+        document.getElementById('captain-trust').textContent = gameState.captainTrust;
+    }
+
+    if (choice.onChoiceMade) {
+        choice.onChoiceMade();
+    }
+
+    if (choice.modalContent) {
+        openModal(choice.modalContent);
+        return;
+    }
+
+    // Set up the next dialogue or scene transition
+    if (choice.nextDialogue) {
+        gameState.currentDialogue = choice.nextDialogue;
+        gameState.dialogueIndex = 0;
+        if (choice.nextScene) {
+            // If there's both nextDialogue and nextScene, set up scene transition after dialogue
+            gameState.nextScene = choice.nextScene;
+        }
+        showNextDialogue();
+    } else if (choice.nextScene) {
+        // If there's only nextScene, transition immediately
+        gameState.nextScene = choice.nextScene;
+        gameState.isTransitioningScene = true;
+        updateProgressButton();
+    }
+}
+
+        // Modal Functions
+        function openModal(content) {
+            gameState.modalActive = true;
+            const modalWindow = document.getElementById('modal-window');
+            document.getElementById('modal-body').innerHTML = content;
+            modalWindow.style.display = 'block';
+            setTimeout(() => modalWindow.classList.add('show'), 10);
+        }
+
+        function closeModal() {
+            const modalWindow = document.getElementById('modal-window');
+            modalWindow.classList.remove('show');
+            setTimeout(() => {
+                modalWindow.style.display = 'none';
+                gameState.modalActive = false;
+
+                // Check if there are follow-up choices for the current choice
+                if (gameState.currentChoice && gameState.currentChoice.followUpChoices) {
+                    showChoices(gameState.currentChoice.followUpChoices);
+                    gameState.choicesAvailable = true;
+                }
+                // Check if there's a next dialogue after the modal
+                else if (gameState.currentChoice && gameState.currentChoice.nextDialogue) {
+                    gameState.currentDialogue = gameState.currentChoice.nextDialogue;
+                    gameState.dialogueIndex = 0;
+                    showNextDialogue();
+                }
+                // Default: ensure choices render if nothing else
+                else if (gameState.currentSceneData.choices && !gameState.choicesAvailable) {
+                    showChoices(gameState.currentSceneData.choices);
+                    gameState.choicesAvailable = true;
+                }
+        }, 300);
+    }
+        // Puzzle Function
+        function checkPuzzleAnswer() {
+            const answer = document.getElementById('puzzle-answer').value.toLowerCase();
+            const feedback = document.getElementById('puzzle-feedback');
+            
+            if (answer === 'eureka') {
+                feedback.textContent = 'Correct! You solved the puzzle.';
+                gameState.inventory.push('Artifact Code');
+                setTimeout(closeModal, 1500);
+            } else {
+                feedback.textContent = 'Incorrect. Please try again.';
+            }
+        }
+
+        // Inventory/Journal Functions
+        function openInventory() {
+            let content = `
+                <h2 style="color: #4a9eff; margin-bottom: 20px;">Journal Entries</h2>
+                ${gameState.journal.length > 0 ? 
+                    '<ul style="list-style-type: none; padding: 0;">' + 
+                    gameState.journal.map(entry => `<li style="padding: 10px; margin: 5px 0; background: rgba(74, 158, 255, 0.1); border-radius: 5px;">📝 ${entry}</li>`).join('') + 
+                    '</ul>' : 
+                    '<p style="color: #888;">Your journal is empty.</p>'}
+
+                <h2 style="color: #4a9eff; margin: 20px 0;">Inventory Items</h2>
+                ${gameState.inventory.length > 0 ? 
+                    '<ul style="list-style-type: none; padding: 0;">' + 
+                    gameState.inventory.map(item => `<li style="padding: 10px; margin: 5px 0; background: rgba(74, 158, 255, 0.1); border-radius: 5px;">📦 ${item}</li>`).join('') + 
+                    '</ul>' : 
+                    '<p style="color: #888;">Your inventory is empty.</p>'}
+            `;
+
+            openModal(content);
+        }
+
+        // Chapter Links
+        function populateChapterLinks() {
+            const chapterLinksContainer = document.getElementById('chapter-links');
+            chapterLinksContainer.innerHTML = '';
+
+            Object.entries(scenes).forEach(([sceneKey, scene]) => {
+                const link = document.createElement('a');
+                link.href = 'javascript:void(0)';
+                link.classList.add('chapter-link');
+                link.textContent = scene.displayName || sceneKey;
+                link.onclick = () => {
+                    loadScene(sceneKey);
+                    document.getElementById('sidebar-menu').style.width = '0';
+                };
+                chapterLinksContainer.appendChild(link);
+            });
+        }
+
+        // Event Listeners
+        function initializeEventListeners() {
+            document.getElementById('progress-button').addEventListener('click', showNextDialogue);
+            document.getElementById('inventory-button').addEventListener('click', openInventory);
+            document.getElementById('modal-close-button').addEventListener('click', closeModal);
+            document.getElementById('hamburger-icon').addEventListener('click', () => {
+                document.getElementById('sidebar-menu').style.width = '250px';
+            });
+            document.getElementById('close-button').addEventListener('click', () => {
+                document.getElementById('sidebar-menu').style.width = '0';
+            });
+        }
+
+        // Initialize Game
+        function initializeGame() {
+            initializeEventListeners();
+            document.getElementById('crew-reputation').textContent = gameState.crewReputation;
+            document.getElementById('captain-trust').textContent = gameState.captainTrust;
+            loadScene(gameState.currentScene);
+            populateChapterLinks();
+        }
+
+        // Start game when document is ready
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>

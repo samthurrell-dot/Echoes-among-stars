@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echoes Among the Stars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b14;--panel:rgba(16,22,38,.92);--border:rgba(255,255,255,.1);--text:#e8edf5;--dim:#8a94a8;--muted:#5a6478;--accent:#5ee898;--accent-dim:#2bb673;--warn:#ffd36c}
+:root[data-theme="light"]{--bg:#f3f5f9;--panel:#ffffff;--border:rgba(10,20,40,.12);--text:#141a26;--dim:#4c5566;--muted:#7a8394;--accent:#16865a;--accent-dim:#16865a;--warn:#8a5a00}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.55;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.35),transparent),radial-gradient(1.5px 1.5px at 48% 9%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 72% 34%,rgba(255,255,255,.22),transparent),radial-gradient(1px 1px at 86% 72%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 30% 80%,rgba(255,255,255,.2),transparent)}
+:root[data-theme="light"] body::before{display:none}
+main{max-width:760px;margin:0 auto;padding:60px 16px 64px;position:relative}
+header{margin-bottom:32px}
+.kicker{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:clamp(34px,8vw,54px);letter-spacing:.04em;line-height:1.1;margin:6px 0 10px}
+.lede{color:var(--dim);max-width:56ch}
+.play{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent-dim);border-radius:14px;padding:18px 20px;margin:24px 0 36px;text-decoration:none;color:inherit;transition:transform .2s}
+.play:hover{transform:translateY(-2px)}
+.play strong{display:block;font-size:18px;font-weight:500}
+.play span{color:var(--dim);font-size:14px}
+.play .go{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);border:1px solid var(--accent-dim);border-radius:8px;padding:8px 14px;white-space:nowrap}
+h2{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:400;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:32px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit;transition:border-color .2s}
+.card:hover{border-color:var(--accent-dim)}
+.card b{display:block;font-weight:500;margin-bottom:2px}
+.card small{color:var(--dim);font-size:13px;line-height:1.45;display:block}
+.tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;padding:1px 6px;border-radius:4px;margin-top:8px;border:1px solid var(--border);color:var(--muted)}
+.tag.warn{color:var(--warn);border-color:currentColor}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.frames a{display:block;border-radius:8px;overflow:hidden;border:1px solid var(--border);aspect-ratio:16/9;background:#000}
+.frames img{width:100%;height:100%;object-fit:cover;display:block}
+footer{margin-top:40px;color:var(--muted);font-size:13px}
+footer a{color:var(--dim)}
+.theme{position:absolute;top:16px;right:16px;background:none;border:1px solid var(--border);color:var(--dim);border-radius:8px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<button class="theme" id="theme" aria-label="Switch light or dark">light / dark</button>
+<header>
+  <div class="kicker">A detective visual novel · in development</div>
+  <h1>Echoes Among the Stars</h1>
+  <p class="lede">Detective Amelia Drake has five days aboard the Valkyrie-7 research station, in orbit around Europa, to solve the murder of Dr. Marcus Rourke before the Chief Inspector docks.</p>
+</header>
+
+<a class="play" href="game/">
+  <div><strong>Play the current build</strong><span>Day 0 and Day 1 are playable. Art isn't uploaded yet, so you'll see a starfield instead of backgrounds and portraits.</span></div>
+  <div class="go">Start ▸</div>
+</a>
+
+<h2>Design reference</h2>
+<div class="grid">
+  <a class="card" href="design/view-clue-dependency-chain.html"><b>Clue dependency chain</b><small>The four evidence layers and how each clue unlocks the next.</small><span class="tag warn">spoilers</span></a>
+  <a class="card" href="design/view-red-herrings.html"><b>Red herrings &amp; information economy</b><small>False leads, noise clues and how trust is shown in the writing.</small><span class="tag warn">spoilers</span></a>
+  <a class="card" href="https://github.com/samthurrell-dot/Echoes-among-stars/tree/main/design"><b>Design documents</b><small>Game design document, technical guide, systems update, clue spreadsheets, voice spec.</small><span class="tag">on GitHub</span></a>
+  <a class="card" href="https://github.com/samthurrell-dot/Echoes-among-stars/tree/main/characters"><b>Character sheets</b><small>Amelia, Lawson, Shaw, Emily and the rest of the crew.</small><span class="tag">on GitHub</span></a>
+</div>
+
+<h2>Earlier prototypes</h2>
+<div class="grid">
+  <a class="card" href="prototypes/vn-systems.html"><b>VN systems build</b><small>Early visual-novel flow with map, evidence and daily report.</small><span class="tag">prototype</span></a>
+  <a class="card" href="prototypes/systems-slice.html"><b>Systems slice</b><small>Map, action economy and end-of-day report in a single screen.</small><span class="tag">prototype</span></a>
+</div>
+
+<h2>Announce trailer · reference frames</h2>
+<div class="frames">
+  <a href="trailer/frames/FRAME_D_hand_entering_04s80.png"><img src="trailer/frames/FRAME_D_hand_entering_04s80.png" alt="Hand entering frame, 4.8s" loading="lazy"></a>
+  <a href="trailer/frames/FRAME_A_badge_in_hand_08s60.png"><img src="trailer/frames/FRAME_A_badge_in_hand_08s60.png" alt="Badge in hand, 8.6s" loading="lazy"></a>
+  <a href="trailer/frames/FRAME_B_badge_on_chest_dark_11s20.png"><img src="trailer/frames/FRAME_B_badge_on_chest_dark_11s20.png" alt="Badge on chest, dark, 11.2s" loading="lazy"></a>
+  <a href="trailer/frames/FRAME_C_badge_on_chest_lit_13s60.png"><img src="trailer/frames/FRAME_C_badge_on_chest_lit_13s60.png" alt="Badge on chest, lit, 13.6s" loading="lazy"></a>
+  <a href="trailer/frames/FRAME_E_exit_lightspill_19s60.png"><img src="trailer/frames/FRAME_E_exit_lightspill_19s60.png" alt="Exit with light spill, 19.6s" loading="lazy"></a>
+</div>
+
+<footer>Source, notes and history: <a href="https://github.com/samthurrell-dot/Echoes-among-stars">github.com/samthurrell-dot/Echoes-among-stars</a></footer>
+</main>
+<script>
+(function(){var r=document.documentElement,k='echoes-theme';try{var s=localStorage.getItem(k);if(s)r.dataset.theme=s;}catch(e){}
+document.getElementById('theme').onclick=function(){var n=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}};})();
+</script>
+</body>
+</html>

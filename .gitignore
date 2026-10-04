@@ -1,0 +1,13 @@
+# Large media — GitHub rejects files over 100 MB
+*.mp4
+*.mov
+*.zip
+
+# Office lock/temp files
+~$*
+*.tmp
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

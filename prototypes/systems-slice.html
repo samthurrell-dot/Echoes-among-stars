@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Echoes Among the Stars — Vertical Slice (Map + Systems)</title>
+<style>
+  :root{
+    --bg:#0b1220;--panel:#111826;--ink:#d6e2ff;--muted:#9ab0d0;--accent:#59a3ff;
+    --good:#45c977;--bad:#ff6b6b;--warn:#ffb84d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+       background:radial-gradient(1200px 600px at 50% -100px, #1f2a44 0%, #0b1220 55%) fixed;
+       color:var(--ink)}
+  .app{max-width:1100px;margin:0 auto;padding:16px}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  h1{font-size:18px;margin:0;font-weight:600;letter-spacing:.3px;color:#e8f0ff}
+  .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:6px 10px;border-radius:999px}
+  .grid{display:grid;gap:12px}
+  .cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden}
+  .panel .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+  .panel .bd{padding:12px}
+  .row{display:flex;gap:10px;align-items:center}
+  button{cursor:pointer;background:rgba(255,255,255,.08);color:var(--ink);border:1px solid rgba(255,255,255,.15);
+         padding:10px 12px;border-radius:10px;font-size:14px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .primary{background:linear-gradient(180deg,rgba(89,163,255,.25),rgba(89,163,255,.15));border-color:rgba(89,163,255,.6)}
+  .danger{background:linear-gradient(180deg,rgba(255,107,107,.25),rgba(255,107,107,.15));border-color:rgba(255,107,107,.6)}
+  .ghost{background:transparent;border-color:rgba(255,255,255,.12)}
+  .statbar{height:8px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+  .statbar>span{display:block;height:100%}
+  .good{background:linear-gradient(90deg,var(--good),#7ce1a1)}
+  .warn{background:linear-gradient(90deg,var(--warn),#ffd37a)}
+  .bad{background:linear-gradient(90deg,var(--bad),#ff9a9a)}
+  .loc{position:relative;border-radius:14px;overflow:hidden;min-height:120px;background:#0e1626;border:1px solid rgba(255,255,255,.08)}
+  .loc>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75}
+  .loc .label{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12)}
+  .loc .badge{position:absolute;right:10px;top:10px;background:rgba(0,0,0,.55);padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);font-size:12px}
+  .loc button{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+  .log{max-height:250px;overflow:auto;font-size:14px;line-height:1.35}
+  .log p{margin:0 0 8px}
+  .tag{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:12px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .sus{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .sus .card{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px;background:rgba(255,255,255,.04)}
+  .sus .name{font-weight:600;margin-bottom:6px}
+  .sus .meter{height:8px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+  .sus .meter>span{display:block;height:100%;background:linear-gradient(90deg,#a1b6ff,#6a8bff)}
+  .clue{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px dashed rgba(255,255,255,.18);padding:8px;border-radius:10px}
+  .small{font-size:12px;color:var(--muted)}
+  .right{margin-left:auto}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:40}
+  .modal.active{display:flex}
+  .sheet{width:min(760px,100%);background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden}
+  .sheet .hd{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+  .sheet .bd{padding:14px}
+  .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.18);font-size:12px}
+  @media (max-width:880px){ .cols-3{grid-template-columns:1fr} .cols-2{grid-template-columns:1fr} .sus{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Echoes Among the Stars — Systems Slice</h1>
+    <div class="row">
+      <span class="pill">Day <span id="day">1</span>/5</span>
+      <span class="pill"><span id="actions">3</span> actions left</span>
+      <button class="ghost" id="saveBtn" title="Saves to your browser (localStorage)">Save</button>
+      <button class="ghost" id="loadBtn">Load</button>
+      <button class="ghost danger" id="resetBtn">Reset</button>
+    </div>
+  </header>
+
+  <div class="grid cols-3">
+    <!-- Left: Map -->
+    <section class="panel">
+      <div class="hd"><strong>Map</strong><span class="small">Pick a location to spend 1 action</span></div>
+      <div class="bd grid cols-3" id="map"></div>
+    </section>
+
+    <!-- Middle: Scene Log -->
+    <section class="panel">
+      <div class="hd"><strong>Scene</strong><span class="small right" id="sceneLabel">&nbsp;</span></div>
+      <div class="bd">
+        <div class="log" id="log"></div>
+        <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap" id="choices"></div>
+      </div>
+    </section>
+
+    <!-- Right: Systems -->
+    <section class="panel">
+      <div class="hd"><strong>Stats</strong><span class="small">Auto-updates</span></div>
+      <div class="bd">
+        <div class="row">
+          <span style="width:120px">Captain Trust</span>
+          <div class="statbar" style="flex:1"><span id="trustBar" class="good" style="width:50%"></span></div>
+          <span id="trustText" class="right small">50</span>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <span style="width:120px">Crew Rep</span>
+          <div class="statbar" style="flex:1"><span id="repBar" class="warn" style="width:50%"></span></div>
+          <span id="repText" class="right small">50</span>
+        </div>
+        <div style="height:10px"></div>
+        <div class="hd" style="margin:-12px -12px 12px -12px"><strong>Suspicion</strong><span class="small">Assign clues → suspicion rises</span></div>
+        <div class="sus" id="susList"></div>
+        <div style="height:10px"></div>
+        <div class="hd" style="margin:-12px -12px 12px -12px"><strong>Evidence</strong><span class="small">Tap a clue to assign</span></div>
+        <div id="clues" class="grid cols-2"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:12px">
+    <section class="panel">
+      <div class="hd"><strong>Journal</strong><span class="small">Auto-logged choices</span></div>
+      <div class="bd"><div id="journal" class="log"></div></div>
+    </section>
+    <section class="panel">
+      <div class="hd"><strong>End of Day</strong><span class="small">When actions hit 0</span></div>
+      <div class="bd">
+        <p class="small">At the end of each day, choose what to report to Captain Lawson. Reporting everything boosts Trust but may lock routes; holding back keeps autonomy but risks curfew.</p>
+        <button class="primary" id="forceEOD">Trigger End of Day</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Modal: Daily Report -->
+<div class="modal" id="eodModal">
+  <div class="sheet">
+    <div class="hd"><strong>Daily Report</strong><button class="ghost" id="closeEOD">Close</button></div>
+    <div class="bd">
+      <p>Pick up to <span class="kbd">2</span> findings to report today.</p>
+      <div id="reportList" class="grid cols-2"></div>
+      <div class="row" style="margin-top:12px;justify-content:flex-end">
+        <button id="submitReport" class="primary">Submit Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------------------
+   Data: Assets & Cast
+-------------------------------- */
+const ASSETS = {
+  backgrounds:{
+    command_center:"assets/images/Scenes/command_center.jpg",
+    dining_hall:"assets/images/Scenes/dining_hall.jpg",
+    docking_bay:"assets/images/Scenes/docking_bay.jpg",
+    hallway:"assets/images/Scenes/hallway_meet_cute.jpg",
+    quarters:"assets/images/Scenes/quarters.jpg"
+  },
+  // Not required yet; portraits can be wired later
+  portraits:{}
+};
+
+const SUSPECTS = ["Lawson","Shaw","Emily"]; // keep the slice small
+
+/* ----------------------------
+   Core Game State
+-------------------------------- */
+const saveKey = "echoes-systems-slice-v1";
+const game = {
+  day:1,
+  actions:3,
+  captainTrust:50,
+  crewRep:50,
+  suspicion:{Lawson:10,Shaw:20,Emily:10},
+  trust:{Lawson:50,Shaw:30,Emily:40},
+  flags:{},
+  clues:[],            // discovered clue ids
+  clueAssignments:{},  // clueId -> [suspects]
+  journal:[]
+};
+
+/* ----------------------------
+   Helper UI bits
+-------------------------------- */
+const el=(sel)=>document.querySelector(sel);
+const els=(sel)=>[...document.querySelectorAll(sel)];
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function pct(n){return clamp(n,0,100)+"%";}
+function log(text){const p=document.createElement("p");p.innerHTML=text;el("#log").appendChild(p);el("#log").scrollTop=1e6;}
+function jot(text){const p=document.createElement("p");p.textContent="• "+text;el("#journal").appendChild(p);el("#journal").scrollTop=1e6;game.journal.push(text);}
+
+/* ----------------------------
+   Content: Locations & Events
+-------------------------------- */
+const LOCATIONS=[
+  {id:"command_center", name:"Command Center"},
+  {id:"dining_hall", name:"Dining Hall"},
+  {id:"docking_bay", name:"Docking Bay"},
+  {id:"hallway", name:"Main Hallway"},
+  {id:"quarters", name:"Quarters"}
+];
+
+// Minimal event pool for Day 1 only
+const EVENTS={
+  command_center:[
+    { id:"brief_intro", once:true,
+      text:[
+        "<b>Captain Lawson</b>: Detective, welcome aboard Valkyrie‑7.",
+        "Lawson’s gaze lingers. Is she assessing you—or worried what you might find?",
+        "She grants <i>limited</i> access for today."
+      ],
+      effects(){ bumpTrust(+"Lawson",+5); bumpCaptainTrust(+5); bumpCrewRep(+2); flag('captain_briefed'); }
+    },
+    { id:"query_manifest",
+      need:()=>hasFlag('captain_briefed'),
+      text:[
+        "You skim the cargo manifest. One crate is logged twice, with a timestamp discrepancy.",
+        "A <b>Duplicate Manifest</b> might be nothing—or a mask."
+      ],
+      gainClue:"dup_manifest"
+    }
+  ],
+  dining_hall:[
+    { id:"meet_emily", once:true,
+      text:[
+        "<b>Emily</b> smiles thinly. “Data integrity is my job. If something’s off, I’ll find it.”",
+        "Her eyes dart when you mention the duplicate manifest."
+      ],
+      effects(){ bumpTrust("Emily",+5); },
+      gainClue:"emily_glance"
+    }
+  ],
+  docking_bay:[
+    { id:"shaw_tense", once:true,
+      text:[
+        "<b>Daniel Shaw</b> wipes grease from his hands. “Everything that lands here goes through me.”",
+        "When you reference schedule overlaps, his jaw sets."
+      ],
+      effects(){ bumpSuspicion("Shaw",+5); bumpCrewRep(+3); },
+      gainClue:"overlap_shift"
+    }
+  ],
+  hallway:[
+    { id:"eavesdrop",
+      text:[
+        "Two crew whisper beyond a bulkhead: “If the detective checks the logs, we’re burned.”",
+        "Footsteps fade."
+      ],
+      gainClue:"whisper_logs"
+    }
+  ],
+  quarters:[
+    { id:"family_msg", once:true,
+      text:[
+        "In your quarters, a queued message from home: <i>Stay safe. Trust your gut.</i>",
+        "You feel steadier."
+      ],
+      effects(){ bumpCaptainTrust(+2); }
+    }
+  ]
+};
+
+const CLUES={
+  dup_manifest:{name:"Duplicate Manifest", desc:"Two entries for the same crate within 3 minutes.", weight:8},
+  emily_glance:{name:"Emily’s Glance", desc:"Flinch when manifest is mentioned.", weight:5},
+  overlap_shift:{name:"Overlap in Shaw’s shift", desc:"He worked during both manifest timestamps.", weight:10},
+  whisper_logs:{name:"Hallway whisper", desc:"Someone fears a log audit.", weight:6}
+};
+
+/* ----------------------------
+   Systems: stat mutations
+-------------------------------- */
+function bumpCaptainTrust(v){game.captainTrust=clamp(game.captainTrust+v,0,100);}
+function bumpCrewRep(v){game.crewRep=clamp(game.crewRep+v,0,100);}
+function bumpTrust(name,v){game.trust[name]=clamp((game.trust[name]||0)+v,0,100);}
+function bumpSuspicion(name,v){game.suspicion[name]=clamp((game.suspicion[name]||0)+v,0,100);}
+function flag(k){game.flags[k]=true;}
+function hasFlag(k){return !!game.flags[k];}
+function gainClue(id){
+  if(!game.clues.includes(id)){game.clues.push(id);jot("Found clue: "+CLUES[id].name); renderClues();}
+}
+
+/* ----------------------------
+   Map & Interaction
+-------------------------------- */
+function renderMap(){
+  const host=el("#map"); host.innerHTML="";
+  LOCATIONS.forEach(loc=>{
+    const div=document.createElement("div"); div.className="loc";
+    const img=document.createElement("img"); img.alt=""; img.src=ASSETS.backgrounds[loc.id]||""; div.appendChild(img);
+    const label=document.createElement("div"); label.className="label"; label.textContent=loc.name; div.appendChild(label);
+    const badge=document.createElement("div"); badge.className="badge"; badge.textContent="Go"; div.appendChild(badge);
+    const btn=document.createElement("button");
+    btn.addEventListener("click",()=>visit(loc.id,loc.name));
+    if(game.actions<=0) btn.disabled=true;
+    div.appendChild(btn); host.appendChild(div);
+  });
+}
+
+function visit(id,name){
+  if(game.actions<=0){openEOD();return;}
+  game.actions--; updateHeader();
+  el("#sceneLabel").textContent=name;
+  const pool=EVENTS[id]||[];
+  const evt=pool.find(e=> (e.need?e.need():true) && !e._done ) || pool.find(e=> (e.need?e.need():true) );
+  if(!evt){ log("You look around "+name+". Nothing new for now."); return; }
+  (evt.text||[]).forEach(t=>log(t));
+  if(evt.effects) evt.effects();
+  if(evt.gainClue) gainClue(evt.gainClue);
+  if(evt.once) evt._done=true;
+  if(game.actions<=0) openEOD();
+  renderStats();
+}
+
+/* ----------------------------
+   Evidence board (tap-to-assign)
+-------------------------------- */
+function renderClues(){
+  const host=el("#clues"); host.innerHTML="";
+  game.clues.forEach(id=>{
+    const c=CLUES[id];
+    const row=document.createElement("div"); row.className="clue";
+    const left=document.createElement("div");
+    left.innerHTML=`<div><strong>${c.name}</strong></div><div class="small">${c.desc}</div>`;
+    const assign=document.createElement("div");
+    const sel=document.createElement("select");
+    sel.innerHTML = "<option value=''>Assign to suspect…</option>" + SUSPECTS.map(s=>`<option value="${s}">${s}</option>`).join("");
+    const assignBtn=document.createElement("button"); assignBtn.textContent="Add"; assignBtn.className="primary";
+    assignBtn.onclick=()=>{
+      const who=sel.value; if(!who) return;
+      const arr = game.clueAssignments[id] || (game.clueAssignments[id]=[]);
+      if(!arr.includes(who)){ arr.push(who); bumpSuspicion(who, Math.min(10,c.weight)); renderSus(); jot(`Assigned <${c.name}> to ${who}`); }
+    };
+    assign.appendChild(sel); assign.appendChild(assignBtn);
+    row.appendChild(left); row.appendChild(assign); host.appendChild(row);
+  });
+}
+
+/* ----------------------------
+   Suspect meters
+-------------------------------- */
+function renderSus(){
+  const host=el("#susList"); host.innerHTML="";
+  SUSPECTS.forEach(s=>{
+    const card=document.createElement("div"); card.className="card";
+    const nm=document.createElement("div"); nm.className="name"; nm.textContent=s; card.appendChild(nm);
+    const meter=document.createElement("div"); meter.className="meter";
+    const bar=document.createElement("span"); bar.style.width=pct(game.suspicion[s]||0);
+    meter.appendChild(bar); card.appendChild(meter);
+    const small=document.createElement("div"); small.className="small";
+    small.textContent="Suspicion: "+(game.suspicion[s]||0);
+    card.appendChild(small);
+    host.appendChild(card);
+  });
+}
+
+/* ----------------------------
+   End-of-day flow
+-------------------------------- */
+function openEOD(){
+  // Build checklist of recent clues (today only for now)
+  const list=el("#reportList"); list.innerHTML="";
+  const candidates=game.clues.slice(-5); // last few discoveries
+  candidates.forEach(id=>{
+    const c=CLUES[id];
+    const row=document.createElement("label"); row.className="clue";
+    row.innerHTML=`<div><strong>${c.name}</strong><div class='small'>${c.desc}</div></div>`;
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.value=id; row.appendChild(cb);
+    list.appendChild(row);
+  });
+  el("#eodModal").classList.add("active");
+}
+
+function closeEOD(){ el("#eodModal").classList.remove("active"); }
+
+function submitReport(){
+  const chosen=[...el("#reportList").querySelectorAll("input[type=checkbox]:checked")].map(x=>x.value);
+  // Simple scoring: more honesty -> more Trust; holding back -> autonomy (Crew Rep)
+  const honesty = chosen.length;
+  bumpCaptainTrust( 5*honesty );
+  bumpCrewRep( honesty===0 ? +8 : honesty===1 ? +4 : -2 );
+  jot("Submitted daily report ("+honesty+" items).");
+  closeEOD();
+  nextDay();
+}
+
+function nextDay(){
+  game.day++; if(game.day>5){ endGame(); return; }
+  game.actions=3;
+  updateHeader();
+  log("<i>— A new day dawns over Europa —</i>");
+}
+
+function endGame(){
+  // Tiny rubric for now
+  const sMax=Math.max(...SUSPECTS.map(s=>game.suspicion[s]||0));
+  const trusted=game.captainTrust;
+  let tier="D"; if(sMax>=80 && trusted>=70) tier="S"; else if(sMax>=70) tier="A"; else if(sMax>=60) tier="B"; else if(sMax>=50) tier="C";
+  log(`<b>Case closed.</b> Ending tier: <b>${tier}</b> (Max suspicion ${sMax}, Captain Trust ${trusted}).`);
+  jot("Ending tier "+tier);
+}
+
+/* ----------------------------
+   Save / Load
+-------------------------------- */
+function save(){ localStorage.setItem(saveKey, JSON.stringify(game)); jot("Saved progress."); }
+function load(){
+  const raw=localStorage.getItem(saveKey);
+  if(!raw) return;
+  const data=JSON.parse(raw);
+  Object.assign(game,data);
+  updateHeader(); renderClues(); renderSus(); renderStats(); renderMap();
+  jot("Loaded save.");
+}
+function reset(){ localStorage.removeItem(saveKey); location.reload(); }
+
+/* ----------------------------
+   Render helpers
+-------------------------------- */
+function renderStats(){
+  el("#trustBar").style.width=pct(game.captainTrust);
+  el("#trustText").textContent=game.captainTrust;
+  el("#repBar").style.width=pct(game.crewRep);
+  el("#repText").textContent=game.crewRep;
+  renderSus();
+}
+function updateHeader(){
+  el("#day").textContent=game.day;
+  el("#actions").textContent=game.actions;
+  renderMap();
+  renderStats();
+}
+
+/* ----------------------------
+   Boot
+-------------------------------- */
+function boot(){
+  renderMap(); renderClues(); renderSus(); renderStats(); updateHeader();
+  log("<i>Docking clamps release with a thud. Valkyrie‑7 hums like a sleeping beast.</i>");
+  jot("Arrived aboard Valkyrie‑7");
+}
+boot();
+/* ---- Rebuilt by Claude, Oct 2026: the original end of this file was lost to file damage. ---- */
+el("#saveBtn").onclick=save;
+el("#loadBtn").onclick=load;
+el("#resetBtn").onclick=reset;
+el("#forceEOD").onclick=openEOD;
+el("#closeEOD").onclick=closeEOD;
+el("#submitReport").onclick=submitReport;
+</script>
+</body>
+</html>

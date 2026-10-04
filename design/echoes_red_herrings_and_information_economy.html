@@ -1,0 +1,233 @@
+<style>
+*{box-sizing:border-box}
+.sec{margin-bottom:1.5rem}
+.sec-title{font-size:16px;font-weight:500;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px}
+.card-t{font-size:14px;font-weight:500;margin-bottom:4px}
+.card-b{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-right:4px;margin-top:4px}
+.t-red{background:#FCEBEB;color:#A32D2D}
+.t-amber{background:#FAEEDA;color:#854F0B}
+.t-teal{background:#E1F5EE;color:#0F6E56}
+.t-purple{background:#EEEDFE;color:#534AB7}
+.t-gray{background:#F1EFE8;color:#5F5E5A}
+.t-blue{background:#E6F1FB;color:#185FA5}
+.demo{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:16px;margin-top:8px}
+.demo-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em}
+.dial-box{border-left:3px solid;padding:8px 12px;margin-bottom:6px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.5;background:var(--color-background-primary)}
+.dial-name{font-weight:500;font-size:12px;margin-bottom:2px}
+.tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.tab{padding:6px 14px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;transition:all 0.15s}
+.tab:hover{color:var(--color-text-primary)}
+.tab.active{color:var(--color-text-primary);border-color:var(--color-text-primary)}
+.panel{display:none}.panel.active{display:block}
+</style>
+
+<div class="tabs" id="tabs">
+<div class="tab active" onclick="showTab(0)">Red herrings</div>
+<div class="tab" onclick="showTab(1)">Information economy</div>
+<div class="tab" onclick="showTab(2)">Trust signals</div>
+</div>
+
+<div class="panel active" id="p0">
+<div class="sec">
+<div class="sec-title">False leads and noise clues</div>
+<div class="grid3">
+
+<div class="card">
+<div class="card-t" style="color:#A32D2D">Pierce: the opportunist</div>
+<div class="card-b">Pierce hated Rourke for blocking his career. He has no alibi. His lab key was used at 01:30. He was overheard saying "someone should deal with him."</div>
+<div><span class="tag t-red">Red herring</span><span class="tag t-gray">Days 1-3</span></div>
+</div>
+
+<div class="card">
+<div class="card-t" style="color:#A32D2D">Marquez: the rival</div>
+<div class="card-b">Marquez had a funding dispute with Rourke. She has the biochem knowledge to stage evidence. She was seen near the lab corridor late that night.</div>
+<div><span class="tag t-red">Red herring</span><span class="tag t-gray">Days 1-3</span></div>
+</div>
+
+<div class="card">
+<div class="card-t" style="color:#A32D2D">Liu: the ethicist</div>
+<div class="card-b">Liu was furious about Rourke's reckless experiments. She had access to the lab. She submitted a formal complaint two weeks before the murder.</div>
+<div><span class="tag t-red">Red herring</span><span class="tag t-gray">Days 1-2</span></div>
+</div>
+
+<div class="card">
+<div class="card-t" style="color:#854F0B">Contaminated samples</div>
+<div class="card-b">Lab samples were deliberately contaminated. Looks like sabotage. Was this the motive? Investigation reveals Rourke did it himself to fake results.</div>
+<div><span class="tag t-amber">Misdirection</span><span class="tag t-gray">Day 2</span></div>
+</div>
+
+<div class="card">
+<div class="card-t" style="color:#854F0B">Rourke's enemies list</div>
+<div class="card-b">A document on Rourke's terminal lists grievances against 6 crew members. Dramatic — but it's just Rourke being Rourke. Everyone had a grudge.</div>
+<div><span class="tag t-amber">Noise</span><span class="tag t-gray">Day 1</span></div>
+</div>
+
+<div class="card">
+<div class="card-t" style="color:#854F0B">Catherine Rourke's pressure</div>
+<div class="card-b">Messages from the Rourke family demanding answers. Catherine threatens Lawson, hinting at "consequences." Creates urgency and suspicion of outside interference.</div>
+<div><span class="tag t-amber">Pressure</span><span class="tag t-gray">Days 2-4</span></div>
+</div>
+</div>
+</div>
+
+<div class="sec">
+<div class="sec-title">How red herrings resolve</div>
+<div class="grid2">
+<div class="card">
+<div class="card-t">Design principle: every false lead teaches something</div>
+<div class="card-b">Red herrings aren't dead ends — they reveal character. Investigating Pierce teaches you he's an opportunist who'd steal credit but wouldn't kill. Investigating Marquez shows you she forges data but abhors violence. Each false lead removed sharpens your focus on what really happened and builds trust with the cleared suspect.</div>
+</div>
+<div class="card">
+<div class="card-t">Design principle: the player must decide to stop pulling a thread</div>
+<div class="card-b">Noise clues cost actions to investigate. Each action spent on a false lead is one not spent building Emily's trust or following the real conspiracy chain. The game never says "this was a red herring" — the player has to use judgement about when a lead has gone cold. Amelia's internal thoughts give subtle guidance.</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="panel" id="p1">
+<div class="sec">
+<div class="sec-title">Information as currency</div>
+<div class="grid2">
+
+<div class="card">
+<div class="card-t">Daily report: what you share matters</div>
+<div class="card-b">Each evening, choose which findings to report to Lawson. Three strategic outcomes:</div>
+<div style="margin-top:6px">
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-teal">Full report</span> Lawson trust rises, but suspects learn what you know (via crew gossip). Some conversation options close.</div>
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-amber">Partial report</span> You control the narrative. Withhold conspiracy evidence to protect your investigation. Lawson grows suspicious.</div>
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-red">False lead reported</span> Feed Lawson a red herring to buy time. Costs credibility if she realises, but distracts her from your real investigation.</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-t">Leverage in conversations</div>
+<div class="card-b">Some dialogue options only appear when you hold specific clues. You can use information as leverage:</div>
+<div style="margin-top:6px">
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-blue">Trade</span> "I won't mention the manifest anomaly in my report if you let me see the comms logs." Information for access.</div>
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-blue">Confront</span> "Your badge pinged at 03:12, Shaw. I think it's time we talked properly." Evidence forces honesty.</div>
+<div style="font-size:12px;margin-bottom:4px"><span class="tag t-blue">Bond</span> "Between us — I found something that clears you completely." Sharing exonerating evidence builds deep trust fast.</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-t">Red herrings as tools</div>
+<div class="card-b">Even wrong clues have value. Report Pierce's suspicious lab access to distract Lawson while you investigate her. Mention Marquez's data forgery to lower suspicion on Emily. The player learns that a detective doesn't just find truth — they manage what different people believe.</div>
+</div>
+
+<div class="card">
+<div class="card-t">The evidence board sorts itself</div>
+<div class="card-b">As the player collects clues — real and false — the evidence board becomes a tool for the player's own reasoning. Clues aren't labelled "real" or "fake." The player assigns clues to suspects and sees whether a coherent story forms. The board reflects their theory, not the truth.</div>
+</div>
+</div>
+</div>
+
+<div class="sec">
+<div class="sec-title">Example: trading information for access</div>
+<div class="demo">
+<div class="demo-label">Day 2 — comms room — Emily trust 48 (not enough for D2)</div>
+<div class="dial-box" style="border-color:#ed93b1">
+<div class="dial-name" style="color:#ed93b1">Emily Anderson</div>
+"I'd love to help, Detective, but comms traffic is classified. Captain's orders."
+</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Choice A (standard)</div>
+"I understand. I'll come back when I have authorisation." <span class="tag t-gray">Leave — costs nothing, gains nothing</span>
+</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Choice B (leverage — requires D4: duplicate manifest)</div>
+"I found something odd in the cargo manifests. Two entries, same crate. I could include that in my report to Lawson... or I could keep it between us while you show me those comms logs." <span class="tag t-blue">Trade: omit D4 from report in exchange for D2</span>
+</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Choice C (bond — requires having cleared Emily of suspicion)</div>
+"Emily, I want you to know — I've looked at the timeline, and you're not on my suspect list. I need your help to find who actually did this." <span class="tag t-teal">Gains +12 trust, may unlock D2 naturally</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="panel" id="p2">
+<div class="sec">
+<div class="sec-title">Trust signals through behaviour, not numbers</div>
+<div class="grid2">
+
+<div class="card">
+<div class="card-t">Body language in dialogue</div>
+<div class="card-b">Characters physically signal their trust level through stage directions embedded in dialogue. The player reads the person, not a meter.</div>
+<div class="demo" style="margin-top:8px">
+<div class="demo-label">Shaw at different trust levels</div>
+<div class="dial-box" style="border-color:#ff8a5c">
+<div class="dial-name" style="color:#ff8a5c">Trust 20-30 (guarded)</div>
+Shaw doesn't look up from his console. "I already gave my statement." <em style="color:var(--color-text-tertiary);font-size:12px">— Arms crossed, won't make eye contact</em>
+</div>
+<div class="dial-box" style="border-color:#ff8a5c">
+<div class="dial-name" style="color:#ff8a5c">Trust 40-50 (thawing)</div>
+Shaw pauses. His jaw works for a moment. "What do you actually want to know?" <em style="color:var(--color-text-tertiary);font-size:12px">— He's listening, but choosing words carefully</em>
+</div>
+<div class="dial-box" style="border-color:#ff8a5c">
+<div class="dial-name" style="color:#ff8a5c">Trust 60+ (opening up)</div>
+Shaw sits. His hands uncurl for the first time. "There's something I need to tell you. About why I was really out that night." <em style="color:var(--color-text-tertiary);font-size:12px">— He's decided to trust you</em>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-t">Amelia's intuition as guide</div>
+<div class="card-b">After each conversation, Amelia's thoughts signal what the player should do differently — without ever mentioning numbers.</div>
+<div class="demo" style="margin-top:8px">
+<div class="demo-label">Amelia's thought after a conversation</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Trust too low — clue exists but locked</div>
+<em style="font-size:13px">"She knows something about those comms logs. I can see it in the way she glanced at the terminal. But she's not ready to share — not yet."</em>
+</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Trust rising — almost there</div>
+<em style="font-size:13px">"Emily's warming up. One more gesture of good faith and I think she'll open the comms archive for me."</em>
+</div>
+<div class="dial-box" style="border-color:#5ee898">
+<div class="dial-name" style="color:#5ee898">Trust high — clue available</div>
+<em style="font-size:13px">"Emily trusts me. If I ask about the comms anomaly now, she'll tell me everything she knows."</em>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="sec">
+<div class="sec-title">Four organic trust signals</div>
+<div class="grid2">
+
+<div class="card">
+<div class="card-t">1. Dialogue tone shift</div>
+<div class="card-b">Characters' word choices, sentence length, and formality change with trust. Shaw goes from "I gave my statement" to "There's something I need to tell you." Emily goes from "That's classified" to "I found something strange." The writing itself signals the relationship.</div>
+</div>
+
+<div class="card">
+<div class="card-t">2. Conversational breadcrumbs</div>
+<div class="card-b">Characters drop hints about what they could tell you if they trusted you more. "I've noticed some things about the comms traffic but... no, never mind." These aren't locked-door signs — they're realistic moments where someone almost confides but pulls back.</div>
+</div>
+
+<div class="card">
+<div class="card-t">3. Amelia's smart-folio</div>
+<div class="card-b">When reviewing notes in the evening, Amelia summarises each relationship qualitatively: "Shaw is still a wall, but the wall has cracks." "Emily seems ready to talk — I should follow up on her mention of the comms anomaly." This replaces a trust meter with detective intuition.</div>
+</div>
+
+<div class="card">
+<div class="card-t">4. The HUD stays — but soft</div>
+<div class="card-b">Keep the existing trust bars in the HUD, but make them vague: no numbers visible by default. "Captain Trust" shows a warm/cold gradient bar. Players who want precision can hover for the number. Most will learn to read the room instead.</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+function showTab(i){
+document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+</script>
