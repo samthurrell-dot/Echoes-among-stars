@@ -10,6 +10,7 @@ A sci-fi detective visual novel. Detective Amelia Drake has five days aboard the
 
 | Folder | What's in it |
 |---|---|
+| [`diary/`](diary/) | **Dev diary**: how the game got here, version by version, with screenshots. |
 | [`game/`](game/) | The current playable build. `index.html` is the engine, `game_data.js` is all the story content. |
 | [`design/`](design/) | Game design document, technical guide, systems update, clue spreadsheets, scene tracker, authorial voice spec. |
 | [`characters/`](characters/) | Character sheets. |
@@ -22,11 +23,11 @@ A sci-fi detective visual novel. Detective Amelia Drake has five days aboard the
 
 - **With Claude:** start a Claude Code session on this repo (from the Claude app or claude.ai/code) and ask for what you want, e.g. "write the Day 2 comms room scene with Emily". Claude reads `CLAUDE.md` first, makes the change on a branch and opens a pull request for you to look at.
 - **Checking a change:** once a pull request is merged into `main`, the website updates by itself within a couple of minutes.
-- **Adding art:** upload portraits to `game/assets/images/Characters/` and backgrounds to `game/assets/images/Scenes/` (GitHub → the folder → Add file → Upload files). Filenames must match the ones in `game/game_data.js` exactly, including capital letters and spaces. The Technical Design Guide (section 8) lists every file the game expects.
+- **Adding art:** the original art folder was lost in October 2026, so the image folders are empty. Only add images the game actually uses (drafts stay out of `game/`). Upload portraits to `game/assets/images/Characters/` and backgrounds to `game/assets/images/Scenes/` (GitHub → the folder → Add file → Upload files). Filenames must match the ones in `game/game_data.js` exactly, including capital letters and spaces. The Technical Design Guide (section 8) lists every file the game expects.
 
 ## Status
 
-Day 0 (arrival to murder) and Day 1 (briefing plus nine location scenes) are playable. Days 2–5, the endings and all art are still to come. See the "Current state of development" section of [`CLAUDE.md`](CLAUDE.md) for the full list.
+Day 0 (arrival to murder) and Day 1 (briefing plus nine location scenes) are playable. Days 2–5 and the endings are still to come, and the art needs replacing. See the "Current state of development" section of [`CLAUDE.md`](CLAUDE.md) for the full list.
 
 ## File repairs (October 2026)
 

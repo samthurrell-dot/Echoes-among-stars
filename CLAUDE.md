@@ -20,12 +20,17 @@ echoes-among-stars/
 ├── index.html                ← Front page of the published site (links to everything)
 ├── CLAUDE.md                 ← This file
 ├── README.md                 ← Plain-language guide for Sam
+├── diary/                    ← DEV DIARY: README.md is the diary; index.html shows it on the website
+│   ├── README.md             ← The only file to edit when adding an entry
+│   ├── index.html            ← Renders README.md (don't put diary text in here)
+│   ├── img/                  ← Screenshots for the diary (JPEG, 1024px wide)
+│   └── vendor/marked.min.js  ← Markdown library used by index.html
 ├── game/                     ← THE GAME (current build)
 │   ├── index.html            ← Engine: UI, rendering, state, all systems
 │   ├── game_data.js          ← ALL content: scenes, characters, clues, events, trust text
 │   └── assets/images/
-│       ├── Characters/       ← Portrait PNGs (transparent bg, ~600×900) — not uploaded yet
-│       └── Scenes/           ← Background JPGs (16:9, ~1920×1080) — not uploaded yet
+│       ├── Characters/       ← Portrait PNGs (transparent bg, ~600×900) — empty: the art was lost in Oct 2026
+│       └── Scenes/           ← Background JPGs (16:9, ~1920×1080) — empty: the art was lost in Oct 2026
 ├── design/                   ← Design documents and spreadsheets
 │   ├── ECHOES AMONG THE STARS-Game Design Document 2 Feb 2025.docx
 │   ├── Echoes_Technical_Design_Guide.docx
@@ -233,7 +238,7 @@ Shaw also has a hidden **guilt meter** starting at 80. Must reach ≤40 for conf
 - **Izzy reunion scene** — Shaw speaks to Izzy via secure channel
 - **Character sheet for Dr. Simone Marquez** (the old file was empty)
 - **Trust quest mini-scenes** (coffee machine for Max, Earth spices for Emily, hull drill for Vega, morale session for Clara, Titan scandal confession for Amelia)
-- **Art assets** — portraits and backgrounds need uploading to `game/assets/images/` (checklist in the Technical Design Guide, section 8)
+- **Art assets** — the original art folder was lost to the October 2026 disk damage. Only upload images the game actually uses (Sam has lots of drafts, especially of Amelia — those stay out of `game/`). Filenames must match `game_data.js` exactly; the checklist is in the Technical Design Guide, section 8. Leonardo AI's generation history may still hold the originals.
 - **Red herring resolution scenes** — investigating and clearing Pierce, Marquez, Liu
 - **Dialogue variants by trust band**
 - **Lawson confrontation mechanics** — presenting conspiracy evidence triggers a point of no return
@@ -247,6 +252,17 @@ Many files in Sam's local folder were found damaged at the disk level when the r
 - `prototypes/systems-slice.html`, `prototypes/vn-systems.html` — lost endings (button wiring and start-up) rebuilt; marked in the file.
 - `prototypes/damaged/` — two prototypes with parts of the file overwritten mid-way. Not repairable; kept for reference only.
 - Not in the repo: the 128 MB demo recording (over GitHub's 100 MB file limit), and the old v1 engine (replaced by the current game).
+
+## Dev diary — keep it going
+
+Sam wants the repo and the website to work as a dev diary that shows how much iteration has gone into the game. **At the end of any session that changes something meaningful** (new scenes, a system change, new art, a design decision, trailer progress), add an entry to the bottom of `diary/README.md`:
+
+- Heading format: `## 12 October 2026 — Short title` (date, space, em dash, space, title). The website splits on the em dash, and the heading becomes the link anchor.
+- A few short paragraphs or bullets in plain language: what changed, what was tried and dropped, and why. Mention versions and revisions; the point is to show the iteration.
+- Be honest about who did what: Sam directs and decides; Claude builds and drafts. Don't invent Sam's feelings or quotes; only quote him if he said it.
+- Screenshots: save as JPEG, 1024×576, around quality 80, in `diary/img/` named `YYYY-MM-what.jpg`. Put the image on its own line with an italic caption on the line straight after it: `![alt text](img/2026-10-day2-comms.jpg)` then `*Caption.*`
+- Update the "By the numbers" table if a number changed.
+- Never edit `diary/index.html` to add content; it only displays `README.md`.
 
 ## How to work on this project
 
