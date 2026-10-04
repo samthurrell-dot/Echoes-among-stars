@@ -1,0 +1,4 @@
+date,end_utc,commit,summary,models,replies,output_tokens,fresh_input_tokens,cache_read_tokens,files_changed,lines_added,lines_removed,game_lines_changed,scenes,clues,location_events,choice_options,ingame_words,tokens_per_line_changed
+2026-10-04,2026-10-04T22:12:32Z,999615c,"Set up the repo, recovered damaged files, fixed two engine bugs",claude-opus-5-5 (61),61,76540,261234,15855561,44,5338,0,791,20,36,11,45,2260,14.3
+2026-10-04,2026-10-04T22:39:18Z,853c749,Added the dev diary (repo and website),claude-opus-5-5 (45),45,34558,373342,17733272,20,347,6,0,20,36,11,45,2260,97.9
+2026-10-04,2026-10-04T22:50:28Z,05f9c52,Added the tools-and-models record and session stats tracking,claude-opus-5-5 (17),17,17398,28928,8156985,4,253,8,0,20,36,11,45,2260,66.7
