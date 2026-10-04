@@ -255,7 +255,7 @@ Many files in Sam's local folder were found damaged at the disk level when the r
 
 ## Dev diary — keep it going
 
-Sam wants the repo and the website to work as a dev diary that shows how much iteration has gone into the game. **At the end of any session that changes something meaningful** (new scenes, a system change, new art, a design decision, trailer progress), add an entry to the bottom of `diary/README.md`:
+Sam wants the repo and the website to work as a dev diary that shows how much iteration has gone into the game. **At the end of any session that changes something meaningful** (new scenes, a system change, new art, a design decision, trailer progress), add an entry at the end of the timeline in `diary/README.md`, just above the `## Session stats` heading:
 
 - Heading format: `## 12 October 2026 — Short title` (date, space, em dash, space, title). The website splits on the em dash, and the heading becomes the link anchor.
 - A few short paragraphs or bullets in plain language: what changed, what was tried and dropped, and why. Mention versions and revisions; the point is to show the iteration.
@@ -263,6 +263,18 @@ Sam wants the repo and the website to work as a dev diary that shows how much it
 - Screenshots: save as JPEG, 1024×576, around quality 80, in `diary/img/` named `YYYY-MM-what.jpg`. Put the image on its own line with an italic caption on the line straight after it: `![alt text](img/2026-10-day2-comms.jpg)` then `*Caption.*`
 - Update the "By the numbers" table if a number changed.
 - Never edit `diary/index.html` to add content; it only displays `README.md`.
+- Add a `*Made with:*` line naming the tools and models used. Use the exact model ID from the session (for Claude Code sessions it's in the stats log). Never guess a model; write "not recorded" instead.
+
+## Session stats — log every session
+
+Sam is tracking how much the game changes per session and how token-efficient different models are. At the end of **every** working session in Claude Code:
+
+1. Commit the session's work.
+2. Run `python3 tools/session_stats.py --summary "One plain-language line about what was done"`. It reads this session's model and token counts from the local transcript, the git changes since the last logged commit (ignoring `diary/stats/`), and the game's size, and appends a row to `diary/stats/sessions.csv`.
+3. Commit the CSV with the rest of the session (same branch/PR).
+4. Mention the headline numbers (model, output tokens, lines changed) in the diary entry and in your reply to Sam.
+
+If the work happened outside Claude Code (e.g. in the Claude app), use `--no-tokens --model "<model, if known>"`. Use `--dry-run` to preview. Don't edit past rows except to fix a clear mistake, and say so in the diary if you do.
 
 ## How to work on this project
 

@@ -6,7 +6,7 @@ How *Echoes Among the Stars* got from an idea to where it is now: every version,
 
 Dates come from the files themselves and from the project's Claude chats. Where a date is a best guess, the entry says so.
 
-[Jump to the latest entry ↓](#4-october-2026--moving-into-github-and-a-scare)
+[Jump to the latest entry ↓](#4-october-2026--starting-to-keep-score) · [Session stats ↓](#session-stats)
 
 ---
 
@@ -18,16 +18,36 @@ Dates come from the files themselves and from the project's Claude chats. Where 
 | Game engines | 4 prototypes → engine v1 → engine v2 |
 | Clues in the case | 4 → 9 → 24 → 36 |
 | Character sheets | 3 → 11 (one since lost) |
-| Playable scenes today | 20 (Day 0 and Day 1), about 3,000 words of in-game text |
+| Playable scenes today | 20 (Day 0 and Day 1), about 2,300 words of dialogue, narration and Amelia's thoughts |
 | Voice spec | version 0.6 |
 | Shaw interview scene | revision 3 |
 | Announce trailer | video v1 → rebuild plan v2 → keyframe plan v3 |
+
+## Tools and models
+
+Which AI tools made what. Where the model wasn't written down at the time, it says so. Please correct anything that's wrong.
+
+| What | Made with |
+|---|---|
+| Early prototypes (2024–2025) | Probably ChatGPT, from Sam's memory. The files don't say. |
+| Game design document (Feb 2025) | Not recorded |
+| Engine v1 and v2, Day 0 and Day 1 writing, design documents, spreadsheets, design pages (Mar 2026) | Claude, in Claude app chats. The exact model wasn't recorded. |
+| Character art and backgrounds | Leonardo AI (lost in Oct 2026) |
+| Voice spec and Shaw scenes (Jul 2026) | Not recorded |
+| Trailer script, shot plan and video diagnosis (Aug–Oct 2026) | Claude |
+| Trailer video v1 (Aug 2026) | Seedance 2.5 |
+| Trailer plan v3 (Oct 2026) | Kling 4.0 (video) and ElevenLabs Eleven v4 (voice), planned |
+| Repo setup, file recovery, bug fixes, this diary (Oct 2026 onwards) | Claude Opus 5.5 (`claude-opus-5-5`) in Claude Code, recorded automatically |
+
+From October 2026 the model and token counts for every session are logged automatically. See [Session stats](#session-stats).
 
 ---
 
 ## 6 December (probably 2024) — Version 7 of the opening
 
 The earliest file that survives is called *Space Murder game 6 Dec_v7*. The "v7" means at least six earlier attempts at the opening came before it. It was a playable web page: Amelia arrives, meets the Captain, reads her emails (one from Lawson, and one from her parents that opens "Hey Rocket Girl!"), and two meters track Crew Reputation and Captain's Trust.
+
+*Made with:* probably ChatGPT.
 
 The year isn't in the file. It's very likely December 2024, since the design document from February 2025 already describes a reworked story.
 
@@ -46,6 +66,8 @@ Several small prototypes tested how the investigation could actually play, along
 - **Systems slice:** one screen with a station map (5 locations), 3 actions a day, a suspicion meter for 3 suspects, 4 clues and an end-of-day report.
 - **VN systems build:** a visual-novel layout with a ship map, evidence board and daily report.
 - **Day 0 + systems:** an attempt to join the story opening and the systems into one build. *(Damaged in October 2026; kept for the record.)*
+
+*Made with:* probably ChatGPT.
 
 A 128 MB screen recording of the demo is dated **9 August 2025**. It's too big for GitHub, so it stays on Sam's computer.
 
@@ -75,6 +97,8 @@ The same day:
 - **Technical Design Guide**: how the engine works, how to write scenes, the art checklist.
 - **Clue System v1**: 24 clues across four layers (surface, doubt, conspiracy, redemption).
 - Two interactive design pages: the clue dependency chain, and the red herrings.
+
+*Made with:* Claude, in a Claude app chat (the model wasn't recorded). Claude wrote the Word documents by writing code that builds them.
 
 ![The title screen](img/2026-03-title.jpg)
 *The title screen.*
@@ -139,6 +163,8 @@ The writing gets its own rulebook: a **voice spec**, now at version 0.6, describ
 
 ## August 2026 — The announce trailer, version 1
 
+*Made with:* Claude for the script, shot plan and frame-by-frame diagnosis; Seedance 2.5 for the video.
+
 Work starts on a 30–45 second announce trailer, built around one "hero shot": Amelia's badge floats in zero gravity, her hand catches it and clips it to her chest, and gravity comes back on. Her face is never shown. Cuts to the crew interrupt it.
 
 Sam corrected the first script: no LED light on the badge (its shine should come from reflections), and Amelia's suit is navy with silver piping, not teal and gold.
@@ -170,6 +196,29 @@ Setting it up turned up two bigger problems:
 
 An automated playthrough of the rebuilt game also found two bugs that had been there since March. Day 1 never started properly, so none of its location scenes could ever be reached. And skipping text on the investigation screen made the choice buttons vanish. Both are fixed: the game now plays from the arrival all the way through to Day 2.
 
+*Made with:* Claude Opus 5.5 in Claude Code. From here on, every session's model and token use is logged below.
+
+## 4 October 2026 — Starting to keep score
+
+Now that everything lives in GitHub, each working session gets measured: which model did the work, how many tokens it used, how much of the project changed, and how big the game is afterwards. Over time this will show how easy the game is to change, and how efficient different models are at doing it.
+
+The first two sessions are logged below. Setting up the repo used about 77,000 tokens of output; the dev diary used about 35,000.
+
 ---
 
-*New entries are added at the bottom after each working session.*
+## Session stats
+
+One row per working session, added by `tools/session_stats.py` (the full table is in [`stats/sessions.csv`](stats/sessions.csv)).
+
+How to read it:
+- **Output tokens** is what the model wrote (code, documents, replies). It's the best single measure of how much work a session took.
+- **Fresh input** is new material the model read for the first time. **Cache reads** is the model re-reading the conversation so far, which is cheap. It grows quickly in long sessions.
+- **Lines changed** counts lines added plus lines removed across the repo. **Game lines** counts only the `game/` folder.
+- **Tokens per line changed** is output tokens divided by lines changed. It's a rough efficiency measure: lower means less model output per line of change. Compare it between similar kinds of task. A session that mostly copies files in (like the first one) looks unrealistically efficient, and one that's mostly writing (like the diary) looks the opposite.
+- The game size columns (scenes, clues, choices, words) are measured from `game/game_data.js` at the end of each session.
+
+Work done in the Claude app (rather than Claude Code) doesn't record token counts, so those rows show the model only.
+
+---
+
+*New entries go at the end of the timeline, just above Session stats, after each working session.*

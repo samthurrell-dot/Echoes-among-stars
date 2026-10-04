@@ -26,11 +26,18 @@ main{max-width:720px;margin:0 auto;padding:60px 16px 72px;position:relative}
 #diary em{color:var(--dim)}
 #diary code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:0 4px;word-break:break-word}
 #diary table{width:100%;border-collapse:collapse;margin:4px 0 18px;font-size:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-#diary thead{display:none}
+#diary th{text-align:left;font-weight:500;font-size:12px;color:var(--muted);padding:9px 12px;font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
 #diary td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:top}
-#diary tr:first-child td{border-top:0}
-#diary td:first-child{color:var(--dim)}
-#diary td:last-child{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-align:right}
+.numbers thead{display:none}
+.numbers tr:first-child td{border-top:0}
+.numbers td:first-child{color:var(--dim)}
+.numbers td:last-child{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-align:right}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:4px 0 18px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+.scroll table{margin:0!important;border:0!important;border-radius:0!important;min-width:760px}
+.scroll td{white-space:nowrap}
+.scroll td:nth-child(2){white-space:normal;min-width:190px}
+.scroll td.n{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;white-space:nowrap}
+.scroll th.n{text-align:right}
 /* timeline entries */
 .entry{position:relative;padding:0 0 8px 22px;border-left:1px solid var(--line);margin-left:6px}
 .entry::before{content:'';position:absolute;left:-6px;top:9px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
@@ -57,6 +64,10 @@ figcaption{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.45}
   document.getElementById('theme').onclick=function(){var n=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}};
 
   // Same heading ids as GitHub, so links like #4-october-2026--... work in both places
+  function parseCSV(t){var out=[],row=[],f='',q=false;for(var i=0;i<t.length;i++){var c=t[i];
+    if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c=='"')q=true;else if(c==','){row.push(f);f='';}else if(c=='\n'){row.push(f.replace(/\r$/,''));out.push(row);row=[];f='';}else f+=c;}
+    if(f||row.length){row.push(f);out.push(row);}return out;}
   function slug(t){return t.trim().toLowerCase().replace(/[^\w\- ]+/g,'').replace(/ /g,'-');}
 
   var el=document.getElementById('diary');
@@ -85,6 +96,20 @@ figcaption{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.45}
       if(n.nodeType===1&&n.tagName==='H2'){cur=document.createElement('section');cur.className=n.querySelector('.when')?'entry':'plain';el.insertBefore(cur,n);cur.appendChild(n);return;}
       if(n.nodeType===1&&n.tagName==='HR'){cur=null;return;}
       if(cur)cur.appendChild(n);
+    });
+    var nums=document.getElementById('by-the-numbers'); if(nums)nums.parentNode.classList.add('numbers');
+    var statsH=document.getElementById('session-stats');
+    if(statsH) fetch('stats/sessions.csv',{cache:'no-cache'}).then(function(r){return r.ok?r.text():'';}).then(function(t){
+      var rows=parseCSV(t); if(rows.length<2)return;
+      var hd=rows[0], idx=function(k){return hd.indexOf(k);}, fmt=function(v){return v===''?'—':(isNaN(+v)?v:(+v).toLocaleString('en-GB'));};
+      var cols=[['Date','date'],['What','summary'],['Model','models'],['Output tokens','output_tokens',1],['Lines changed',null,1],['Game words','ingame_words',1],['Tokens / line','tokens_per_line_changed',1]];
+      var tbl=document.createElement('table'), th='<thead><tr>'+cols.map(function(c){return '<th'+(c[2]?' class="n"':'')+'>'+c[0]+'</th>';}).join('')+'</tr></thead><tbody>';
+      rows.slice(1).forEach(function(r){ if(r.length<hd.length)return;
+        th+='<tr>'+cols.map(function(c){var v=c[1]?r[idx(c[1])]:String((+r[idx('lines_added')]||0)+(+r[idx('lines_removed')]||0));
+          if(c[1]==='models')v=v.replace(/ \(\d+\)/g,'');
+          var td=document.createElement('td'); td.textContent=c[2]?fmt(v):v; if(c[2])td.className='n'; return td.outerHTML;}).join('')+'</tr>';});
+      tbl.innerHTML=th+'</tbody>'; var w=document.createElement('div'); w.className='scroll'; w.appendChild(tbl);
+      var firstP=statsH.parentNode.querySelector('p'); statsH.parentNode.insertBefore(w, firstP?firstP.nextSibling:null);
     });
     if(location.hash){var t=document.getElementById(decodeURIComponent(location.hash.slice(1)));if(t)t.scrollIntoView();}
   }).catch(function(){
